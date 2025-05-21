@@ -5,6 +5,7 @@ import classesRoutes from './classes.routes';
 import apprenantsRoutes from './apprenants.routes';
 import matieresRoutes from './matieres.routes';
 import etablissementsRoutes from './etablissements.routes';
+import dashboardRoutes from './dashboard.routes';
 import { globalLimiter } from '../middlewares/rateLimit.middleware';
 
 const router = express.Router();
@@ -19,6 +20,7 @@ router.use('/classes', classesRoutes);
 router.use('/apprenants', apprenantsRoutes);
 router.use('/matieres', matieresRoutes);
 router.use('/etablissements', etablissementsRoutes);
+router.use('/dashboard', dashboardRoutes);
 
 // Health check endpoint
 router.get('/health', (req, res) => {
