@@ -8,7 +8,8 @@ import {
   timestamp, 
   date, 
   numeric,
-  pgEnum
+  pgEnum,
+  time
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -357,3 +358,258 @@ export type AnneeAcademique = typeof annees_academiques.$inferSelect;
 export const insertSalleSchema = createInsertSchema(salles);
 export type InsertSalle = z.infer<typeof insertSalleSchema>;
 export type Salle = typeof salles.$inferSelect;
+
+// Library book statuses enum
+export const statutLivreEnum = pgEnum('statut_livre', ['disponible', 'emprunte', 'reserve', 'retire', 'perdu', 'endommage']);
+
+// Library management - Books
+export const livres = pgTable("livres", {
+  id: serial("id").primaryKey(),
+  titre: varchar("titre", { length: 200 }).notNull(),
+  isbn: varchar("isbn", { length: 30 }),
+  auteur: varchar("auteur", { length: 150 }),
+  editeur: varchar("editeur", { length: 150 }),
+  annee_publication: integer("annee_publication"),
+  categorie: varchar("categorie", { length: 100 }),
+  description: text("description"),
+  nombre_exemplaires: integer("nombre_exemplaires").default(1),
+  disponible: integer("disponible").default(1),
+  date_ajout: timestamp("date_ajout").defaultNow(),
+  statut: statutLivreEnum("statut").default('disponible'),
+  cote: varchar("cote", { length: 50 }),
+  photo_couverture: text("photo_couverture"),
+  etablissement_id: integer("etablissement_id").references(() => etablissements.id)
+});
+
+// Library relations
+export const livresRelations = relations(livres, ({ one, many }) => ({
+  etablissement: one(etablissements, {
+    fields: [livres.etablissement_id],
+    references: [etablissements.id]
+  }),
+  emprunts: many(emprunts)
+}));
+
+// Library loans
+export const emprunts = pgTable("emprunts", {
+  id: serial("id").primaryKey(),
+  livre_id: integer("livre_id").notNull().references(() => livres.id),
+  utilisateur_id: integer("utilisateur_id").notNull().references(() => users.id),
+  date_emprunt: timestamp("date_emprunt").defaultNow(),
+  date_retour_prevue: date("date_retour_prevue").notNull(),
+  date_retour_reelle: date("date_retour_reelle"),
+  statut: varchar("statut", { length: 30 }).default('en cours'),
+  remarques: text("remarques"),
+  etablissement_id: integer("etablissement_id").references(() => etablissements.id)
+});
+
+// Loan relations
+export const empruntsRelations = relations(emprunts, ({ one }) => ({
+  livre: one(livres, {
+    fields: [emprunts.livre_id],
+    references: [livres.id]
+  }),
+  utilisateur: one(users, {
+    fields: [emprunts.utilisateur_id],
+    references: [users.id]
+  }),
+  etablissement: one(etablissements, {
+    fields: [emprunts.etablissement_id],
+    references: [etablissements.id]
+  })
+}));
+
+// Sanctions management
+export const sanctions = pgTable("sanctions", {
+  id: serial("id").primaryKey(),
+  apprenant_id: integer("apprenant_id").notNull().references(() => apprenants.id),
+  type_sanction: varchar("type_sanction", { length: 100 }).notNull(),
+  motif: text("motif").notNull(),
+  date_sanction: date("date_sanction").defaultNow(),
+  date_fin: date("date_fin"),
+  description: text("description"),
+  delivre_par: integer("delivre_par").references(() => users.id),
+  statut: varchar("statut", { length: 30 }).default('active'),
+  etablissement_id: integer("etablissement_id").references(() => etablissements.id)
+});
+
+// Sanctions relations
+export const sanctionsRelations = relations(sanctions, ({ one }) => ({
+  apprenant: one(apprenants, {
+    fields: [sanctions.apprenant_id],
+    references: [apprenants.id]
+  }),
+  utilisateur: one(users, {
+    fields: [sanctions.delivre_par],
+    references: [users.id]
+  }),
+  etablissement: one(etablissements, {
+    fields: [sanctions.etablissement_id],
+    references: [etablissements.id]
+  })
+}));
+
+// Exams management
+export const examens = pgTable("examens", {
+  id: serial("id").primaryKey(),
+  titre: varchar("titre", { length: 200 }).notNull(),
+  description: text("description"),
+  type_examen: varchar("type_examen", { length: 50 }).notNull(),
+  date_debut: timestamp("date_debut").notNull(),
+  date_fin: timestamp("date_fin").notNull(),
+  duree_minutes: integer("duree_minutes"),
+  classe_id: integer("classe_id").references(() => classes.id),
+  matiere_id: integer("matiere_id").references(() => matieres.id),
+  enseignant_id: integer("enseignant_id").references(() => users.id),
+  statut: varchar("statut", { length: 30 }).default('planifie'),
+  note_max: numeric("note_max", { precision: 5, scale: 2 }).default(20),
+  coefficient: integer("coefficient").default(1),
+  etablissement_id: integer("etablissement_id").references(() => etablissements.id)
+});
+
+// Exams relations
+export const examensRelations = relations(examens, ({ one, many }) => ({
+  classe: one(classes, {
+    fields: [examens.classe_id],
+    references: [classes.id]
+  }),
+  matiere: one(matieres, {
+    fields: [examens.matiere_id],
+    references: [matieres.id]
+  }),
+  enseignant: one(users, {
+    fields: [examens.enseignant_id],
+    references: [users.id]
+  }),
+  etablissement: one(etablissements, {
+    fields: [examens.etablissement_id],
+    references: [etablissements.id]
+  }),
+  notes: many(notes_examens)
+}));
+
+// Exam results/grades
+export const notes_examens = pgTable("notes_examens", {
+  id: serial("id").primaryKey(),
+  examen_id: integer("examen_id").notNull().references(() => examens.id),
+  apprenant_id: integer("apprenant_id").notNull().references(() => apprenants.id),
+  note: numeric("note", { precision: 5, scale: 2 }),
+  remarque: text("remarque"),
+  date_saisie: timestamp("date_saisie").defaultNow(),
+  saisi_par: integer("saisi_par").references(() => users.id),
+  etablissement_id: integer("etablissement_id").references(() => etablissements.id)
+}, (table) => {
+  return {
+    unq: { name: "unique_note_apprenant_examen", columns: [table.examen_id, table.apprenant_id] }
+  };
+});
+
+// Exam grades relations
+export const notesExamensRelations = relations(notes_examens, ({ one }) => ({
+  examen: one(examens, {
+    fields: [notes_examens.examen_id],
+    references: [examens.id]
+  }),
+  apprenant: one(apprenants, {
+    fields: [notes_examens.apprenant_id],
+    references: [apprenants.id]
+  }),
+  utilisateur: one(users, {
+    fields: [notes_examens.saisi_par],
+    references: [users.id]
+  }),
+  etablissement: one(etablissements, {
+    fields: [notes_examens.etablissement_id],
+    references: [etablissements.id]
+  })
+}));
+
+// Communication - Messages
+export const messages = pgTable("messages", {
+  id: serial("id").primaryKey(),
+  sujet: varchar("sujet", { length: 200 }).notNull(),
+  contenu: text("contenu").notNull(),
+  expediteur_id: integer("expediteur_id").notNull().references(() => users.id),
+  date_envoi: timestamp("date_envoi").defaultNow(),
+  type_message: varchar("type_message", { length: 50 }).default('standard'),
+  priorite: varchar("priorite", { length: 30 }).default('normale'),
+  piece_jointe_url: text("piece_jointe_url"),
+  etablissement_id: integer("etablissement_id").references(() => etablissements.id)
+});
+
+// Messages relations
+export const messagesRelations = relations(messages, ({ one, many }) => ({
+  expediteur: one(users, {
+    fields: [messages.expediteur_id],
+    references: [users.id]
+  }),
+  etablissement: one(etablissements, {
+    fields: [messages.etablissement_id],
+    references: [etablissements.id]
+  }),
+  destinataires: many(message_destinataires)
+}));
+
+// Message recipients
+export const message_destinataires = pgTable("message_destinataires", {
+  id: serial("id").primaryKey(),
+  message_id: integer("message_id").notNull().references(() => messages.id),
+  destinataire_id: integer("destinataire_id").notNull().references(() => users.id),
+  lu: boolean("lu").default(false),
+  date_lecture: timestamp("date_lecture"),
+  statut: varchar("statut", { length: 30 }).default('envoye'),
+  etablissement_id: integer("etablissement_id").references(() => etablissements.id)
+});
+
+// Message recipients relations
+export const messageDestinatairesRelations = relations(message_destinataires, ({ one }) => ({
+  message: one(messages, {
+    fields: [message_destinataires.message_id],
+    references: [messages.id]
+  }),
+  destinataire: one(users, {
+    fields: [message_destinataires.destinataire_id],
+    references: [users.id]
+  }),
+  etablissement: one(etablissements, {
+    fields: [message_destinataires.etablissement_id],
+    references: [etablissements.id]
+  })
+}));
+
+// Create Zod schemas and TypeScript types for the new tables
+
+// Library books
+export const insertLivreSchema = createInsertSchema(livres);
+export type InsertLivre = z.infer<typeof insertLivreSchema>;
+export type Livre = typeof livres.$inferSelect;
+
+// Library loans
+export const insertEmpruntSchema = createInsertSchema(emprunts);
+export type InsertEmprunt = z.infer<typeof insertEmpruntSchema>;
+export type Emprunt = typeof emprunts.$inferSelect;
+
+// Sanctions
+export const insertSanctionSchema = createInsertSchema(sanctions);
+export type InsertSanction = z.infer<typeof insertSanctionSchema>;
+export type Sanction = typeof sanctions.$inferSelect;
+
+// Exams
+export const insertExamenSchema = createInsertSchema(examens);
+export type InsertExamen = z.infer<typeof insertExamenSchema>;
+export type Examen = typeof examens.$inferSelect;
+
+// Exam grades
+export const insertNoteExamenSchema = createInsertSchema(notes_examens);
+export type InsertNoteExamen = z.infer<typeof insertNoteExamenSchema>;
+export type NoteExamen = typeof notes_examens.$inferSelect;
+
+// Messages
+export const insertMessageSchema = createInsertSchema(messages);
+export type InsertMessage = z.infer<typeof insertMessageSchema>;
+export type Message = typeof messages.$inferSelect;
+
+// Message recipients
+export const insertMessageDestinataireSchema = createInsertSchema(message_destinataires);
+export type InsertMessageDestinataire = z.infer<typeof insertMessageDestinataireSchema>;
+export type MessageDestinataire = typeof message_destinataires.$inferSelect;
