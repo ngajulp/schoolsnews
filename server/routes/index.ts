@@ -15,6 +15,8 @@ import permissionsRoutes from './permissions.routes';
 import bulletinsRoutes from './bulletins.routes';
 import financesRoutes from './finances.routes';
 import employeesRoutes from './employees.routes';
+import parentsRoutes from './parents.routes';
+import activitiesRoutes from './activities.routes';
 import { globalLimiter } from '../middlewares/rateLimit.middleware';
 
 const router = express.Router();
@@ -43,6 +45,8 @@ router.use('/permissions', permissionsRoutes);
 router.use('/bulletins', bulletinsRoutes);
 router.use('/finances', financesRoutes);
 router.use('/employees', employeesRoutes);
+router.use('/parents', parentsRoutes);
+router.use('/activities', activitiesRoutes);
 
 // Health check endpoint
 router.get('/health', (req, res) => {
