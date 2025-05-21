@@ -53,3 +53,6 @@ export const validate = <T extends z.ZodType>(
     }
   };
 };
+
+// Alias for backward compatibility
+export const validateRequest = validate;

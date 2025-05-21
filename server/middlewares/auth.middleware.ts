@@ -94,6 +94,9 @@ export const authorize = (requiredRoles: string[]) => {
   };
 };
 
+// Alias for authenticate middleware (for backward compatibility)
+export const protect = authenticate;
+
 // Generate JWT token
 export const generateToken = (user: { id: number; email: string }, roles: string[] = []) => {
   return jwt.sign(

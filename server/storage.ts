@@ -7,7 +7,9 @@ import {
   niveaux_scolaires,
   roles,
   permissions,
-  utilisateur_roles
+  utilisateur_roles,
+  devoirs,
+  soumissions_devoirs
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";

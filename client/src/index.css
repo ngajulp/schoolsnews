@@ -2,6 +2,250 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Base theme variables */
+:root {
+  /* Primary color: Blue (default) */
+  --color-primary-50: 239 246 255;  /* blue-50 */
+  --color-primary-100: 219 234 254; /* blue-100 */
+  --color-primary-200: 191 219 254; /* blue-200 */
+  --color-primary-300: 147 197 253; /* blue-300 */
+  --color-primary-400: 96 165 250;  /* blue-400 */
+  --color-primary-500: 59 130 246;  /* blue-500 */
+  --color-primary-600: 37 99 235;   /* blue-600 */
+  --color-primary-700: 29 78 216;   /* blue-700 */
+  --color-primary-800: 30 64 175;   /* blue-800 */
+  --color-primary-900: 30 58 138;   /* blue-900 */
+  --color-primary-950: 23 37 84;    /* blue-950 */
+
+  /* Secondary color: Gold */
+  --color-secondary-50: 254 252 232;  /* Yellow-50 custom */
+  --color-secondary-100: 254 249 195; /* Yellow-100 */
+  --color-secondary-200: 254 240 138; /* Yellow-200 */
+  --color-secondary-300: 253 224 71;  /* Yellow-300 */
+  --color-secondary-400: 250 204 21;  /* Yellow-400 */
+  --color-secondary-500: 234 179 8;   /* Yellow-500 */
+  --color-secondary-600: 202 138 4;   /* Yellow-600 */
+  --color-secondary-700: 161 98 7;    /* Yellow-700 */
+  --color-secondary-800: 133 77 14;   /* Yellow-800 */
+  --color-secondary-900: 113 63 18;   /* Yellow-900 */
+  --color-secondary-950: 66 32 6;     /* Yellow-950 custom */
+
+  /* Neutral colors */
+  --color-gray-50: 249 250 251;
+  --color-gray-100: 243 244 246;
+  --color-gray-200: 229 231 235;
+  --color-gray-300: 209 213 219;
+  --color-gray-400: 156 163 175;
+  --color-gray-500: 107 114 128;
+  --color-gray-600: 75 85 99;
+  --color-gray-700: 55 65 81;
+  --color-gray-800: 31 41 55;
+  --color-gray-900: 17 24 39;
+  --color-gray-950: 3 7 18;
+
+  /* Success, error, warning, info colors */
+  --color-success-500: 34 197 94;  /* green-500 */
+  --color-error-500: 239 68 68;    /* red-500 */
+  --color-warning-500: 234 179 8;  /* amber-500 */
+  --color-info-500: 59 130 246;    /* blue-500 */
+
+  /* Background and text colors for light mode */
+  --background: 255 255 255;
+  --foreground: 17 24 39;
+
+  /* Component colors */
+  --card: 255 255 255;
+  --card-foreground: 17 24 39;
+  --popover: 255 255 255;
+  --popover-foreground: 17 24 39;
+  --muted: 243 244 246;
+  --muted-foreground: 107 114 128;
+  --accent: 243 244 246;
+  --accent-foreground: 17 24 39;
+  --border: 229 231 235;
+  --input: 229 231 235;
+  --ring: 59 130 246;
+
+  /* Radius */
+  --radius: 0.5rem;
+}
+
+.dark {
+  /* Background and text colors for dark mode */
+  --background: 17 24 39;
+  --foreground: 249 250 251;
+
+  /* Component colors */
+  --card: 31 41 55;
+  --card-foreground: 249 250 251;
+  --popover: 31 41 55;
+  --popover-foreground: 249 250 251;
+  --muted: 55 65 81;
+  --muted-foreground: 156 163 175;
+  --accent: 55 65 81;
+  --accent-foreground: 249 250 251;
+  --border: 55 65 81;
+  --input: 55 65 81;
+  --ring: 37 99 235;
+}
+
+/* Color themes */
+.theme-indigo {
+  --color-primary-50: 238 242 255;
+  --color-primary-100: 224 231 255;
+  --color-primary-200: 199 210 254;
+  --color-primary-300: 165 180 252;
+  --color-primary-400: 129 140 248;
+  --color-primary-500: 99 102 241;
+  --color-primary-600: 79 70 229;
+  --color-primary-700: 67 56 202;
+  --color-primary-800: 55 48 163;
+  --color-primary-900: 49 46 129;
+  --color-primary-950: 30 27 75;
+}
+
+.theme-purple {
+  --color-primary-50: 250 245 255;
+  --color-primary-100: 243 232 255;
+  --color-primary-200: 233 213 255;
+  --color-primary-300: 216 180 254;
+  --color-primary-400: 192 132 252;
+  --color-primary-500: 168 85 247;
+  --color-primary-600: 147 51 234;
+  --color-primary-700: 126 34 206;
+  --color-primary-800: 107 33 168;
+  --color-primary-900: 88 28 135;
+  --color-primary-950: 59 7 100;
+}
+
+.theme-teal {
+  --color-primary-50: 240 253 250;
+  --color-primary-100: 204 251 241;
+  --color-primary-200: 153 246 228;
+  --color-primary-300: 94 234 212;
+  --color-primary-400: 45 212 191;
+  --color-primary-500: 20 184 166;
+  --color-primary-600: 13 148 136;
+  --color-primary-700: 15 118 110;
+  --color-primary-800: 17 94 89;
+  --color-primary-900: 19 78 74;
+  --color-primary-950: 4 47 46;
+}
+
+.theme-green {
+  --color-primary-50: 240 253 244;
+  --color-primary-100: 220 252 231;
+  --color-primary-200: 187 247 208;
+  --color-primary-300: 134 239 172;
+  --color-primary-400: 74 222 128;
+  --color-primary-500: 34 197 94;
+  --color-primary-600: 22 163 74;
+  --color-primary-700: 21 128 61;
+  --color-primary-800: 22 101 52;
+  --color-primary-900: 20 83 45;
+  --color-primary-950: 5 46 22;
+}
+
+/* Modal styles */
+.modal-overlay {
+  @apply fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4;
+}
+
+.modal-content {
+  @apply bg-card rounded-lg shadow-lg border border-border max-w-lg w-full max-h-[90vh] overflow-auto p-0;
+}
+
+.modal-header {
+  @apply flex items-center justify-between py-4 px-6 border-b border-border bg-primary-100 dark:bg-primary-900 rounded-t-lg;
+}
+
+.modal-body {
+  @apply p-6;
+}
+
+.modal-footer {
+  @apply flex justify-end gap-2 py-4 px-6 border-t border-border;
+}
+
+/* Common component styles */
+@layer components {
+  .btn-primary {
+    @apply bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors;
+  }
+  
+  .btn-secondary {
+    @apply bg-secondary-600 hover:bg-secondary-700 text-white px-4 py-2 rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:ring-offset-2 transition-colors;
+  }
+  
+  .btn-outline {
+    @apply border border-primary-600 text-primary-600 hover:bg-primary-50 px-4 py-2 rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors;
+  }
+  
+  .btn-ghost {
+    @apply text-primary-600 hover:bg-primary-50 px-4 py-2 rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors;
+  }
+  
+  .input-field {
+    @apply w-full px-3 py-2 bg-white dark:bg-gray-800 rounded-md border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500;
+  }
+  
+  .form-label {
+    @apply block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1;
+  }
+  
+  .card {
+    @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm p-6;
+  }
+  
+  .table-container {
+    @apply w-full overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700;
+  }
+  
+  .table {
+    @apply min-w-full divide-y divide-gray-200 dark:divide-gray-700;
+  }
+  
+  .table-header {
+    @apply bg-gray-50 dark:bg-gray-900;
+  }
+  
+  .table-header-cell {
+    @apply px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider;
+  }
+  
+  .table-body {
+    @apply divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800;
+  }
+  
+  .table-row {
+    @apply hover:bg-gray-50 dark:hover:bg-gray-700;
+  }
+  
+  .table-cell {
+    @apply px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400;
+  }
+  
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+  
+  .badge-primary {
+    @apply bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-300;
+  }
+  
+  .badge-secondary {
+    @apply bg-secondary-100 text-secondary-800 dark:bg-secondary-900 dark:text-secondary-300;
+  }
+  
+  .badge-success {
+    @apply bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300;
+  }
+  
+  .badge-danger {
+    @apply bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300;
+  }
+}
+
 :root {
       --background: 0 0% 100%;
 --foreground: 20 14.3% 4.1%;

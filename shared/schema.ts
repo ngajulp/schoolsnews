@@ -577,7 +577,78 @@ export const messageDestinatairesRelations = relations(message_destinataires, ({
   })
 }));
 
+// Homework management
+export const devoirs = pgTable("devoirs", {
+  id: serial("id").primaryKey(),
+  titre: varchar("titre", { length: 200 }).notNull(),
+  description: text("description").notNull(),
+  date_creation: timestamp("date_creation").defaultNow(),
+  date_limite: timestamp("date_limite").notNull(),
+  fichier_url: text("fichier_url"),
+  matiere_id: integer("matiere_id").references(() => matieres.id, { onDelete: 'cascade' }),
+  classe_id: integer("classe_id").references(() => classes.id, { onDelete: 'cascade' }),
+  cree_par: integer("cree_par").references(() => users.id, { onDelete: 'set null' }),
+  statut: varchar("statut", { length: 20 }).default('actif'), // 'actif', 'archive'
+  points_possibles: integer("points_possibles"),
+  instructions_soumission: text("instructions_soumission"),
+  etablissement_id: integer("etablissement_id").references(() => etablissements.id)
+});
+
+export const devoirsRelations = relations(devoirs, ({ one, many }) => ({
+  matiere: one(matieres, {
+    fields: [devoirs.matiere_id],
+    references: [matieres.id],
+  }),
+  classe: one(classes, {
+    fields: [devoirs.classe_id],
+    references: [classes.id],
+  }),
+  createur: one(users, {
+    fields: [devoirs.cree_par],
+    references: [users.id],
+  }),
+  etablissement: one(etablissements, {
+    fields: [devoirs.etablissement_id],
+    references: [etablissements.id],
+  }),
+  soumissions: many(soumissions_devoirs)
+}));
+
+export const soumissions_devoirs = pgTable("soumissions_devoirs", {
+  id: serial("id").primaryKey(),
+  devoir_id: integer("devoir_id").references(() => devoirs.id, { onDelete: 'cascade' }).notNull(),
+  apprenant_id: integer("apprenant_id").references(() => apprenants.id, { onDelete: 'cascade' }).notNull(),
+  date_soumission: timestamp("date_soumission").defaultNow(),
+  contenu: text("contenu"),
+  fichier_url: text("fichier_url"),
+  commentaire_enseignant: text("commentaire_enseignant"),
+  note: integer("note"),
+  date_notation: timestamp("date_notation"),
+  statut: varchar("statut", { length: 20 }).default('soumis'), // 'soumis', 'note', 'retourne'
+});
+
+export const soumissionsDevoirsRelations = relations(soumissions_devoirs, ({ one }) => ({
+  devoir: one(devoirs, {
+    fields: [soumissions_devoirs.devoir_id],
+    references: [devoirs.id],
+  }),
+  apprenant: one(apprenants, {
+    fields: [soumissions_devoirs.apprenant_id],
+    references: [apprenants.id],
+  }),
+}));
+
 // Create Zod schemas and TypeScript types for the new tables
+
+// Homework
+export const insertDevoirSchema = createInsertSchema(devoirs);
+export type InsertDevoir = z.infer<typeof insertDevoirSchema>;
+export type Devoir = typeof devoirs.$inferSelect;
+
+// Homework submissions
+export const insertSoumissionDevoirSchema = createInsertSchema(soumissions_devoirs);
+export type InsertSoumissionDevoir = z.infer<typeof insertSoumissionDevoirSchema>;
+export type SoumissionDevoir = typeof soumissions_devoirs.$inferSelect;
 
 // Library books
 export const insertLivreSchema = createInsertSchema(livres);
