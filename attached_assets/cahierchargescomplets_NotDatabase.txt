@@ -1,0 +1,5530 @@
+---
+
+## ✅ Module 1 : **Gestion des utilisateurs et rôles dynamiques**
+
+---
+
+### 1. 🎯 **Objectif fonctionnel**
+
+Permettre l’enregistrement, l’authentification, l’attribution, la gestion et le contrôle des utilisateurs de l’établissement selon des rôles précis (enseignant, principal, censeur…), avec une gestion **granulaire des permissions** par fonctionnalité (ex : voir / modifier / ajouter / supprimer) et la possibilité de créer des **rôles personnalisés**.
+
+---
+
+### 2. 👥 **Acteurs concernés**
+
+* **Superadmin** : accès total à tous les rôles et fonctions
+* **Administrateurs de l’établissement** : principal, censeur hiérarchique, économe
+* **Enseignants**
+* **Surveillants généraux et de secteur**
+* **Parents**
+* **Apprenants (élèves)**
+* **Agents d’entretien**
+* **Utilisateurs personnalisés (ex : stagiaires, développeurs, gestionnaires temporaires)**
+
+---
+
+### 3. 🧩 **Fonctionnalités détaillées**
+
+#### A. Création d’un compte utilisateur
+
+* Via formulaire admin (Superadmin / Principal)
+* Via import Excel/CSV (apprenants, parents, enseignants)
+
+#### B. Authentification
+
+* Par login/mot de passe
+* Double authentification possible (email/SMS pour profils sensibles)
+* Jetons d’accès (JWT) avec rôles inclus
+
+#### C. Attribution d’un ou plusieurs rôles
+
+* Rôle principal (ex : enseignant)
+* Rôles supplémentaires (ex : enseignant + surveillant général)
+
+#### D. Définition des permissions par rôle
+
+Pour chaque fonctionnalité (ex : gestion des notes) :
+
+* `peut_voir` ✅
+* `peut_ajouter` ➕
+* `peut_modifier` ✏️
+* `peut_supprimer` ❌
+
+> Exemple : un enseignant stagiaire peut seulement voir ses notes, un titulaire peut les modifier.
+
+#### E. Création de **rôles personnalisés**
+
+* Ex : “gestionnaire de bibliothèque”, “superviseur des repas”
+* Chaque rôle est mappé à un ensemble de **permissions** sur les modules fonctionnels
+
+#### F. Modification de rôles
+
+* Seuls les administrateurs peuvent modifier ou retirer un rôle
+* Journalisation des modifications de rôles
+
+#### G. Historique d’accès
+
+* Toutes les connexions sont enregistrées (date, IP, navigateur)
+* Visualisable par administrateurs
+
+---
+
+### 4. 🔁 **États et transitions**
+
+| État     | Description                                          |
+| -------- | ---------------------------------------------------- |
+| Inactif  | Compte créé mais non activé                          |
+| Actif    | Compte utilisable (accès à l’interface)              |
+| Suspendu | Désactivé temporairement par l’admin                 |
+| Archivé  | Utilisateur supprimé logiquement (ex : ancien élève) |
+
+---
+
+### 5. 🧠 **Contraintes métier**
+
+* Un utilisateur peut avoir **plusieurs rôles** simultanés.
+* Un rôle peut être **restreint à certaines classes ou services** (ex : enseignant CM2 uniquement).
+* Certains rôles (ex : `superadmin`) **ne peuvent pas être modifiés** sauf par le superadmin.
+* **Audit obligatoire** de chaque action liée aux utilisateurs et rôles.
+
+---
+
+### 6. 🖥️ **Interfaces attendues**
+
+#### ✅ Backoffice (Web Admin)
+
+* Tableau de gestion des utilisateurs
+* Formulaire d’ajout / édition
+* Gestion dynamique des rôles et permissions
+* Vue des connexions récentes
+* Historique des modifications de rôles
+
+#### ✅ Front Utilisateur (Web + Mobile)
+
+* Page de login
+* Tableau de bord utilisateur selon permissions
+* Menu dynamique (affiche uniquement les modules accessibles)
+
+---
+
+### 7. Table Base de données concernées: etablissements, utilisateurs, roles, permissions, utilisateur_roles, role_permissions, logs_connexions, roles_personnalises, role_personnalise_permissions, utilisateur_role_personnalise
+
+
+
+```
+
+---
+
+### 8. ✅ **Cas d’usage concrets**
+
+#### Cas 1 – Création d’un enseignant stagiaire
+
+* Admin crée un compte utilisateur
+* Lui attribue le rôle “enseignant”
+* Restreint ses permissions à `peut_voir` sur “notes”
+
+#### Cas 2 – Ajout d’un personnel polyvalent
+
+* Un agent est enseignant + surveillant
+* Deux rôles sont attribués avec des permissions distinctes
+* Les modules visibles dans le menu sont la fusion des permissions
+
+#### Cas 3 – Demande de modification d’un rôle
+
+* Un enseignant demande à modifier ses droits pour éditer les notes
+* Une notification est envoyée à l’admin
+* Après approbation, l’admin met à jour les permissions
+
+---
+
+
+
+
+
+
+
+
+
+# 🧑‍🎓 **MODULE 2 : GESTION DES APPRENANTS (ÉLÈVES)**
+
+---
+
+## 🎯 **Objectif général**
+
+Permettre l’enregistrement, le suivi complet et l’évolution académique, administrative et financière de chaque **apprenant**, depuis son admission jusqu’à sa sortie définitive. Ce module est central au système, car il alimente les autres modules (notes, paiements, emplois du temps, bulletins, disciplines, transport, etc.).
+
+---
+
+## 🧩 **Sous-fonctionnalités**
+
+---
+
+### 1. 📝 **Inscription / Admission des apprenants**
+
+* **Champs obligatoires à la création** :
+
+  * Nom(s), prénom(s)
+  * Sexe
+  * Date et lieu de naissance
+  * Nationalité
+  * Photo d’identité
+  * Nom(s) et contacts du ou des parents/responsables
+  * Adresse, téléphone, email du responsable légal
+  * Classe demandée
+  * Année scolaire d’inscription
+  * Numéro matricule (généré automatiquement ou saisi manuellement, selon config)
+  * Numéro d’acte de naissance (facultatif)
+  * Situation médicale (facultatif)
+  * Documents justificatifs en pièces jointes (PDF, images)
+
+* **Options supplémentaires** :
+
+  * Type d’élève : **Interne / Externe / Demi-pensionnaire**
+  * Transport scolaire : Oui / Non (lien avec module transport)
+  * Cantine scolaire : Oui / Non
+  * Bourse : Oui / Non (préciser le montant)
+
+* **Workflow** :
+
+  * Demande d’admission
+  * Validation par l’administration
+  * Génération automatique du matricule si activé
+  * Création du compte élève + accès parent (via portail web ou app mobile)
+
+---
+
+### 2. 🧾 **Dossier académique de l’apprenant**
+
+* **Historique des classes fréquentées** par année académique
+* Moyennes par séquence et par trimestre
+* Bulletins générés
+* Examens présentés
+* Mentions obtenues
+* Changement de classe (passage, redoublement, réorientation)
+
+---
+
+### 3. 💳 **Dossier financier**
+
+* Historique des frais de scolarité payés
+* Historique des frais annexes (transport, cantine, examens…)
+* Soldes dus / trop-perçus
+* Échéancier personnalisé
+* Statut : En règle / En retard / Exonéré / Boursier
+
+---
+
+### 4. 👪 **Lien avec les parents/responsables**
+
+* Un ou plusieurs responsables par apprenant
+* Chaque responsable a :
+
+  * Un compte d’accès sécurisé
+  * Des droits limités (consulter les notes, bulletins, messages, paiements, etc.)
+  * Peut contacter les enseignants ou la direction
+
+---
+
+### 5. ⚙️ **Fonctions administratives supplémentaires**
+
+* Changement de classe (interne)
+* Réaffectation à un autre établissement (inter-écoles)
+* Désactivation / Archivage automatique en fin d’année
+* Suppression logique (jamais de suppression physique sans autorisation spéciale)
+* Réinscription rapide l’année suivante
+
+---
+
+### 6. 📊 **Statistiques & filtres**
+
+* Répartition par sexe, âge, niveau
+* Nombre d’élèves par classe, niveau, série
+* Nombre d’internes / externes
+* Statistiques de performance par période
+* Tableau de bord des effectifs
+
+---
+
+## 🔒 **Sécurité & Confidentialité**
+
+* Accès au module restreint aux rôles autorisés : Admin, Principal, Responsable scolarité, Secrétariat, Responsable financier
+* Traçabilité complète de chaque modification (log des changements)
+* Pièces jointes cryptées si données sensibles
+
+---
+
+## 🔁 **Intégrations natives**
+
+* **Module Notes & Examens** : chaque apprenant est lié à ses copies, résultats et bulletins
+* **Module Finances** : suivi des paiements par apprenant
+* **Module Parents / Portail Famille** : notifications automatiques
+* **Module Emploi du temps** : association de l’élève à un groupe horaire
+* **Module Discipline** : enregistrement des sanctions et retards
+* **Module Transport** : attribution à un bus et itinéraire
+* **Module Cantine** : liste des repas consommés
+
+---
+
+## 🧾 **Modèle de données simplifié (SQL)**
+
+---
+
+## 🖥️ **Interfaces attendues (Web & App)**
+
+### Admin :
+
+* Tableau de bord des apprenants
+* Formulaire de création/édition
+* Filtres par classe / sexe / statut
+* Actions groupées : réinscription, changement de classe
+
+### Parent :
+
+* Profil de l’apprenant
+* Notes, bulletins, absences
+* Paiements
+* Messagerie
+
+---
+
+## ✅ Cas d’usage typiques
+
+| Cas d'usage                 | Description                                                                     |
+| --------------------------- | ------------------------------------------------------------------------------- |
+| Admission d’un nouvel élève | Création depuis le backoffice, enregistrement des pièces, attribution du numéro |
+| Réinscription               | L'élève garde son matricule, changement d’année et classe automatique           |
+| Suivi académique            | Visualisation des notes et moyennes                                             |
+| Mise à jour du profil       | Ajout d’un responsable secondaire, changement de photo, etc.                    |
+
+
+
+---
+
+# 🏫 **MODULE 3 : GESTION DES CLASSES ET NIVEAUX SCOLAIRES**
+
+---
+
+## 🎯 **Objectif général**
+
+Permettre la création, l’organisation, la hiérarchisation et la gestion dynamique des **niveaux scolaires**, **classes**, **groupes pédagogiques**, et leur liaison avec les enseignants, matières, emplois du temps, apprenants, et cycles éducatifs.
+
+Ce module est fondamental car il définit la structure académique de l’établissement et conditionne la majorité des autres modules (notes, emplois du temps, affectation des élèves, enseignants, bulletins…).
+
+---
+
+## 🧩 **Sous-fonctionnalités**
+
+---
+
+### 1. 🎓 **Gestion des cycles et niveaux scolaires**
+
+* **Cycles configurables** (Maternelle, Primaire, Collège, Lycée, Supérieur…)
+* **Niveaux par cycle** : ex. CP, CE1, 6ème, Terminale, etc.
+* **Attributs des niveaux** :
+
+  * Nom court et long
+  * Ordre pédagogique (rang de hiérarchie)
+  * Âge moyen conseillé
+  * Type (examen ou non)
+  * Langue d’enseignement
+  * Durée académique (annuelle, semestrielle…)
+
+---
+
+### 2. 🏷️ **Création et gestion des classes**
+
+* Une **classe** est une instance d’un niveau donnée dans une année académique.
+* **Champs à définir** :
+
+  * Nom de la classe (ex. 5ème A, Terminale S1)
+  * Niveau associé (ex. Terminale)
+  * Année académique
+  * Effectif prévu
+  * Effectif maximum (optionnel)
+  * Cycle (auto-renseigné depuis le niveau)
+  * Série (ex : A, C, D, TI, Hôtellerie...)
+  * Enseignant principal (responsable de classe)
+  * Statut : Active / Fermée
+  * Salle attribuée (liée au module infrastructure)
+  * Section bilingue ou non
+  * Description ou commentaire
+
+---
+
+### 3. 👥 **Affectation des apprenants**
+
+* Affectation manuelle ou en masse d’élèves à une classe
+* Transfert d’une classe à une autre (avec historique)
+* Blocage des affectations après une période définie
+
+---
+
+### 4. 🧑‍🏫 **Affectation des enseignants**
+
+* Attribution d’un **enseignant principal** à chaque classe
+* Attribution des **enseignants de matières** par classe
+* Historique des affectations par année scolaire
+
+---
+
+### 5. 🗓️ **Périodes académiques et unités pédagogiques**
+
+* Définir les **6 séquences** (ou plus selon le pays) par an
+* Définir les **trimestres** (généralement 3)
+* Lier les séquences aux trimestres
+* Périodes paramétrables (dates de début et de fin)
+* Statut : En cours / Fermé / En attente
+* Utilisées dans les calculs de moyennes
+
+---
+
+### 6. 🧪 **Définition des matières par niveau**
+
+* Chaque niveau a une liste de matières obligatoires
+* Pour chaque matière :
+
+  * Coefficient
+  * Nom multilingue
+  * Type : Tronc commun / Option / Spécialité
+  * Langue d’enseignement
+  * Enseignant(s) affecté(s)
+  * Matière à examen (Oui/Non)
+
+---
+
+## 🔗 **Relations avec les autres modules**
+
+* **Apprenants** : chaque apprenant est affecté à une classe (par niveau)
+* **Notes** : notes liées à l’année, la classe, la matière, la séquence
+* **Bulletins** : générés pour chaque apprenant par classe et période
+* **Emploi du temps** : défini par classe
+* **Moyennes** : calculées par séquence et par trimestre, puis cumulées
+* **Finances** : tarifs scolaires peuvent varier par niveau
+* **Salles** : chaque classe peut avoir une salle par défaut
+
+---
+
+## 🔒 **Sécurité & contrôle d’accès**
+
+* Gestion limitée aux utilisateurs avec rôle **administrateur**, **responsable pédagogique** ou **directeur**
+* Audit de chaque création, modification ou suppression de classe
+* Impossible de supprimer une classe liée à des notes ou bulletins
+
+---
+
+## 📊 **Interfaces attendues (Web / Mobile Admin)**
+
+* Liste des classes et niveaux avec filtres :
+
+  * Par année scolaire
+  * Par cycle
+  * Par statut
+* Formulaire de création/édition d’une classe
+* Vue détaillée d’une classe (élèves, enseignants, matières)
+* Import / Export (Excel ou PDF)
+
+---
+
+## 🧾 **Modèle de données simplifié (SQL)**
+
+```sql
+TABLE niveaux et classes
+```
+
+---
+
+## ✅ Cas d’usage typiques
+
+| Cas d'usage                                            | Description                                                         |
+| ------------------------------------------------------ | ------------------------------------------------------------------- |
+| Création d’une classe de Terminale C pour 2024–2025    | Choix du niveau « Terminale », série C, affectation d’un enseignant |
+| Affectation des matières obligatoires                  | Pour chaque niveau, liste des disciplines                           |
+| Suivi de l’effectif par classe                         | Affichage et édition du nombre d’élèves                             |
+| Récupération des classes pour notes ou emploi du temps | Vue utilisée par les autres modules                                 |
+
+---
+
+## 📎 Notes supplémentaires
+
+* Prévoir une option de **duplication de configuration de l’année précédente**
+* Chaque année scolaire doit permettre une structure autonome
+* Envisager des **groupes de niveau ou sous-classes** (pour les groupes modulaires)
+
+
+Parfait ! Voici la **fiche technique complète** et **détaillée** du **Module 4 : Gestion des matières, enseignants et emplois du temps**, à destination directe d’une équipe de développement. Elle fait partie intégrante du cahier de charges de votre système de gestion scolaire complet.
+
+---
+
+# 📘 **MODULE 4 : Gestion des matières, enseignants et emplois du temps**
+
+---
+
+## 🎯 **Objectif général**
+
+Ce module vise à organiser l’ensemble des **matières enseignées**, les **enseignants affectés**, et à planifier les **emplois du temps** de manière automatisée et centralisée. Il permet de gérer la répartition horaire, les salles, les cours hebdomadaires, et les enseignements optionnels par classe ou groupe pédagogique.
+
+---
+
+## 🧩 **Composants fonctionnels du module**
+
+---
+
+### 1. 📚 **Gestion des matières (disciplines scolaires)**
+
+#### a. Création et configuration
+
+* **Champs obligatoires** :
+
+  * `nom` : Libellé de la matière (ex: Mathématiques)
+  * `code` : Identifiant court et unique (ex: MATH)
+  * `langue_d_enseignement`
+  * `niveau_id` : niveau auquel est rattachée la matière
+  * `coefficient` : utilisé pour les calculs de moyennes
+  * `type` : tronc commun / spécialité / optionnel
+  * `est_a_examen` : booléen (true si évaluée à l'examen)
+  * `est_active` : permet de désactiver temporairement
+
+#### b. Relations
+
+* Une matière peut être commune à plusieurs niveaux (via table de liaison `niveau_matiere`)
+* Une matière peut être enseignée par plusieurs enseignants
+
+#### c. Multilingue
+
+* Nom affiché dans plusieurs langues pour interface bilingue
+
+---
+
+### 2. 👩‍🏫 **Gestion des enseignants**
+
+#### a. Informations générales
+
+* Identité complète (nom, prénom, contacts)
+* Spécialité disciplinaire
+* Statut : permanent / vacataire / contractuel
+* Langue d’enseignement
+* Disponibilités (créneaux horaires de la semaine)
+
+#### b. Affectation pédagogique
+
+* Un enseignant peut être :
+
+  * Responsable d’une classe
+  * Affecté à une ou plusieurs matières pour une ou plusieurs classes
+* Historique des affectations
+* Affectation par année scolaire
+
+#### c. Contrôle
+
+* Ne peut enseigner une matière que si compatible avec sa spécialité
+* Interface d’administration pour réaffectation ou remplacement
+
+---
+
+### 3. 🗓️ **Planification des cours & emploi du temps**
+
+#### a. Création des **créneaux horaires types**
+
+* Plages horaires configurables :
+
+  * Exemple : 7h30–8h20, 8h20–9h10, pause, etc.
+  * Jours actifs (lundi au samedi)
+* Définir :
+
+  * Heure de début et de fin
+  * Durée
+  * Pauses autorisées
+
+#### b. Planification manuelle ou assistée
+
+* Planification **manuelle** par drag & drop (web admin)
+* Planification **semi-automatique** avec suggestion intelligente :
+
+  * Respect des contraintes de disponibilité
+  * Évitement de chevauchement (enseignant, salle, classe)
+  * Respect du volume horaire hebdomadaire
+* Possibilité de verrouiller une plage une fois validée
+
+#### c. Liaison avec le calendrier
+
+* Système de calendrier visuel :
+
+  * Vue par classe
+  * Vue par enseignant
+  * Vue par salle
+* Impression PDF ou export Excel
+
+#### d. Types de cours
+
+* Cours normal (récurrent)
+* Cours spécial (remplacement, séminaire…)
+* Salles virtuelles (dans le cas d’un enseignement hybride)
+
+---
+
+### 4. 📊 **Suivi et volumes horaires**
+
+* Suivi du volume d’heures dispensées par matière
+* Comparaison heures prévues vs heures réalisées
+* Alertes si un enseignant dépasse ou n’atteint pas ses heures
+
+---
+
+## 🔐 **Contrôle d’accès et sécurité**
+
+| Rôle                    | Accès                            |
+| ----------------------- | -------------------------------- |
+| Administrateur          | Total                            |
+| Responsable pédagogique | Planification                    |
+| Enseignant              | Consultation                     |
+| Élève / Parent          | Consultation (classe uniquement) |
+
+---
+
+## 📎 **Exemples d’UI attendues**
+
+* Interface dynamique d'emploi du temps (drag & drop)
+* Formulaire d’ajout d’une matière par niveau
+* Liste des enseignants par matière
+* Disponibilité visuelle des enseignants (calendrier)
+* Export hebdomadaire des cours (PDF/Excel)
+* Intégration d’un agenda personnel par enseignant
+
+---
+
+## 🧾 **Modèle de données simplifié (SQL)**
+
+```sql
+CREATE TABLE matieres (
+  id SERIAL PRIMARY KEY,
+  nom VARCHAR(100) NOT NULL,
+  code VARCHAR(10) UNIQUE NOT NULL,
+  langue VARCHAR(20),
+  coefficient INTEGER DEFAULT 1,
+  type VARCHAR(30), -- Tronc commun, Option, Spécialité
+  est_a_examen BOOLEAN DEFAULT FALSE,
+  est_active BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE niveau_matiere (
+  id SERIAL PRIMARY KEY,
+  niveau_id INTEGER REFERENCES niveaux(id),
+  matiere_id INTEGER REFERENCES matieres(id),
+  UNIQUE(niveau_id, matiere_id)
+);
+
+CREATE TABLE enseignant_matiere (
+  id SERIAL PRIMARY KEY,
+  utilisateur_id INTEGER REFERENCES utilisateurs(id),
+  matiere_id INTEGER REFERENCES matieres(id),
+  niveau_id INTEGER REFERENCES niveaux(id),
+  UNIQUE(utilisateur_id, matiere_id, niveau_id)
+);
+
+CREATE TABLE creneaux (
+  id SERIAL PRIMARY KEY,
+  jour_semaine VARCHAR(10), -- Lundi à Samedi
+  heure_debut TIME,
+  heure_fin TIME
+);
+
+CREATE TABLE emplois_du_temps (
+  id SERIAL PRIMARY KEY,
+  classe_id INTEGER REFERENCES classes(id),
+  matiere_id INTEGER REFERENCES matieres(id),
+  enseignant_id INTEGER REFERENCES utilisateurs(id),
+  creneau_id INTEGER REFERENCES creneaux(id),
+  salle_id INTEGER REFERENCES salles(id),
+  annee_scolaire_id INTEGER REFERENCES annees_academiques(id),
+  UNIQUE(classe_id, creneau_id, jour_semaine)
+);
+```
+
+---
+
+## ✅ **Cas d’usage typiques**
+
+| Cas d’usage                                        | Description                                 |
+| -------------------------------------------------- | ------------------------------------------- |
+| Ajout d’une matière de Physique pour Terminale C   | Coefficient 5, enseignée par Mr. Mbiandou   |
+| Consultation de l’emploi du temps de 4ème A        | Vue hebdomadaire des cours avec enseignants |
+| Planification automatique des cours pour 6 classes | Optimisation selon les disponibilités       |
+| Modification manuelle d’un créneau de Maths        | Changement de jour ou d’horaire ponctuel    |
+| Impression de l’emploi du temps d’un enseignant    | Planning personnel imprimé ou exporté       |
+
+---
+
+Voici le **Module 5 : Gestion des bulletins et évaluations**, rédigé en version **détaillée**, claire et technique, à intégrer directement dans le cahier des charges complet de votre système de gestion scolaire.
+
+---
+
+# 📘 **MODULE 5 : Gestion des bulletins et évaluations**
+
+---
+
+## 🎯 **Objectif général**
+
+Permettre la gestion complète des **évaluations des apprenants**, la **production automatique des bulletins**, le **calcul des moyennes séquentielles, trimestrielles et annuelles**, la **gestion des appréciations**, ainsi que la **génération PDF** des bulletins individuels ou collectifs.
+
+---
+
+## 🧩 **Composants fonctionnels du module**
+
+---
+
+### 1. 📝 **Gestion des séquences, trimestres et année académique**
+
+* Une **année académique** contient :
+
+  * 6 **séquences** (ex : S1 à S6)
+  * 3 **trimestres**, chacun composé de 2 séquences
+
+    * Trimestre 1 : S1 + S2
+    * Trimestre 2 : S3 + S4
+    * Trimestre 3 : S5 + S6
+* Chaque période est bien datée :
+
+  * `date_debut`, `date_fin`
+  * Liée à une `annee_academique_id`
+
+---
+
+### 2. 🧪 **Saisie des évaluations**
+
+#### a. Notes séquentielles
+
+* Pour chaque séquence, chaque enseignant saisit les notes des apprenants selon les matières qu’il enseigne dans une classe.
+* Types de notes :
+
+  * Interrogation (coeff. 1)
+  * Devoir maison (coeff. 1 ou 2)
+  * Composition (coeff. 2 ou 3)
+* Notes notées sur 20 (paramétrable)
+
+#### b. Validation et verrouillage
+
+* Une fois la séquence clôturée, la direction valide les notes et empêche leur modification.
+* Les enseignants ne peuvent modifier les notes que pendant la période autorisée.
+
+---
+
+### 3. 📊 **Calcul des moyennes**
+
+#### a. Moyenne par matière
+
+* Moyenne séquentielle par matière = somme pondérée des notes saisies / somme des coefficients.
+
+#### b. Moyenne générale par élève
+
+* Moyenne séquentielle générale = somme (moyennes matières × coefficients) / somme des coefficients.
+
+#### c. Moyennes trimestrielles et annuelles
+
+* Moyenne **trimestrielle** = moyenne arithmétique des deux séquences du trimestre concerné.
+* Moyenne **annuelle** = moyenne arithmétique de toutes les séquences.
+
+---
+
+### 4. 🧾 **Gestion des bulletins**
+
+#### a. Élaboration automatique
+
+* Calcul des rangs dans la classe (ordre décroissant de moyennes)
+* Appréciations automatiques (selon la moyenne)
+* Observation libre ou standardisée
+* Mention : Très Bien / Bien / Assez Bien / Passable / Faible (selon les seuils définis)
+* Discipline : absences, retards, comportement
+
+#### b. Format et personnalisation
+
+* Logo de l’école
+* Signature du responsable
+* Choix de langue (FR/EN)
+* Export **PDF individuel** ou **PDF en lot**
+* Filtrage : par classe, par séquence, par élève
+
+---
+
+### 5. 🧠 **Table des mentions et appréciations**
+
+* Table configurable :
+
+  * Ex : Moyenne ≥ 16 → Très Bien
+  * Ex : Moyenne entre 14–16 → Bien
+  * Possibilité d’ajouter des commentaires dynamiques selon la performance globale
+
+---
+
+### 6. 🔄 **Historique & modifications**
+
+* Historique des modifications de notes
+* Journal d’audit visible pour chaque évaluation
+* Interface de révision (direction uniquement)
+
+---
+
+## 🔐 **Contrôle d’accès**
+
+| Rôle                     | Droits                   |
+| ------------------------ | ------------------------ |
+| Enseignant               | Saisie des notes         |
+| Chef d’établissement     | Validation, édition      |
+| Parent / Élève           | Lecture après validation |
+| Surveillant / Secrétaire | Impression / export PDF  |
+
+---
+
+## 🗄️ **Modèle de données SQL simplifié**
+
+```sql
+CREATE TABLE sequences (
+  id SERIAL PRIMARY KEY,
+  code VARCHAR(10) UNIQUE NOT NULL,
+  nom VARCHAR(50),
+  trimestre_id INTEGER REFERENCES trimestres(id),
+  annee_academique_id INTEGER REFERENCES annees_academiques(id),
+  date_debut DATE,
+  date_fin DATE
+);
+
+CREATE TABLE bulletins (
+  id SERIAL PRIMARY KEY,
+  apprenant_id INTEGER REFERENCES apprenants(id),
+  classe_id INTEGER REFERENCES classes(id),
+  sequence_id INTEGER REFERENCES sequences(id),
+  moyenne_generale NUMERIC(5,2),
+  rang_classe INTEGER,
+  mention VARCHAR(30),
+  apprec_generale TEXT,
+  absences INTEGER,
+  retards INTEGER,
+  comportement TEXT,
+  statut_validation BOOLEAN DEFAULT FALSE,
+  date_generation TIMESTAMP
+);
+
+CREATE TABLE evaluations (
+  id SERIAL PRIMARY KEY,
+  apprenant_id INTEGER REFERENCES apprenants(id),
+  matiere_id INTEGER REFERENCES matieres(id),
+  enseignant_id INTEGER REFERENCES utilisateurs(id),
+  classe_id INTEGER REFERENCES classes(id),
+  sequence_id INTEGER REFERENCES sequences(id),
+  type_evaluation VARCHAR(30), -- interro, devoir, compo
+  note NUMERIC(5,2) CHECK (note >= 0 AND note <= 20),
+  coefficient INTEGER DEFAULT 1,
+  date_saisie TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE appreciations (
+  id SERIAL PRIMARY KEY,
+  seuil_min NUMERIC(5,2),
+  seuil_max NUMERIC(5,2),
+  mention VARCHAR(20),
+  apprec_automatique TEXT
+);
+```
+
+---
+
+## ✅ **Cas d’usage typiques**
+
+| Cas d’usage                                       | Description                                                 |
+| ------------------------------------------------- | ----------------------------------------------------------- |
+| Saisie des notes de S1 par un enseignant de maths | L’enseignant entre les notes pour chaque élève de sa classe |
+| Calcul de la moyenne trimestrielle T1             | Automatisé à partir des moyennes de S1 et S2                |
+| Génération du bulletin de Term C pour S3          | Export PDF avec notes, rang, appréciation                   |
+| Impression en lot des bulletins de 4e A           | Export groupé filtré par classe et séquence                 |
+| Visualisation du rang de l’élève                  | Accessible pour les parents et le personnel                 |
+
+---
+
+## 💡 **Fonctionnalités complémentaires proposées**
+
+* 📎 Archivage annuel des bulletins
+* 📤 Envoi par email des bulletins en PDF
+* 📱 Visualisation des notes sur l’appli mobile
+* 📈 Statistiques par niveau/matière pour l’administration
+
+---
+
+Voici la **fiche détaillée complète** pour le :
+
+---
+
+# 📘 **MODULE 6 : Gestion des présences et discipline**
+
+---
+
+## 🎯 **Objectif général**
+
+Assurer un **suivi quotidien des présences**, **retards** et **comportements disciplinaires** des apprenants, tout en permettant une **traçabilité centralisée**, une **visualisation claire** et des **notifications** automatiques aux parties concernées (parents, administration).
+
+---
+
+## 🧩 **Composants fonctionnels du module**
+
+---
+
+### 1. 🏫 **Suivi de présence quotidienne**
+
+#### a. **Pointage manuel ou digital**
+
+* L'enseignant ou le surveillant peut effectuer l'appel via :
+
+  * Interface web ou mobile
+  * Codes couleurs : ✅ Présent / ❌ Absent / ⏰ En retard / 🛑 Sortie anticipée
+
+#### b. **Modes de pointage**
+
+* Par **classe**, par **séance**, par **jour**
+* Intégration possible avec des **QR codes** ou **badges NFC/RFID** (en option)
+
+#### c. **Récurrence**
+
+* Saisie possible le matin et l’après-midi
+* Historique par élève sur toute l’année
+
+---
+
+### 2. ⏰ **Retards et absences**
+
+* Gestion des retards avec heure d’arrivée
+* Justificatif d’absence (commentaire, fichier attaché)
+* Classification :
+
+  * Absence **justifiée / non justifiée**
+  * Retard **léger / grave**
+* Alertes automatisées après X absences ou retards
+
+---
+
+### 3. 🚨 **Gestion disciplinaire**
+
+#### a. **Comportements**
+
+* Définition des types de comportements :
+
+  * Positifs : entraide, participation active
+  * Négatifs : bavardage, insolence, violence…
+* Chaque comportement est :
+
+  * Saisi par un responsable (enseignant, CPE, surveillant)
+  * Daté, commenté, classé par gravité
+
+#### b. **Sanctions et mesures**
+
+* Types de sanctions paramétrables :
+
+  * Avertissement, blâme, exclusion temporaire, convocation des parents
+* Historique par élève
+* Génération de rapports disciplinaires
+
+---
+
+### 4. 📈 **Visualisation & reporting**
+
+* Fiches individuelles des apprenants :
+
+  * Présences par jour, mois, année
+  * Résumé des incidents disciplinaires
+* Statistiques par classe, matière, enseignant
+* Export PDF / Excel des relevés de présence ou incidents
+* Tableau de bord avec alertes :
+
+  * Élèves à problème
+  * Absence prolongée
+
+---
+
+### 5. 📤 **Notifications et communication**
+
+* Envoi d’**emails / SMS** aux parents :
+
+  * Absence du jour
+  * Sanction enregistrée
+* Messages internes au personnel :
+
+  * Évolution de la situation d’un élève
+* Liens directs vers le dossier de l’élève concerné
+
+---
+
+## 🔐 **Contrôle d’accès**
+
+| Rôle            | Accès                                               |
+| --------------- | --------------------------------------------------- |
+| Enseignant      | Pointage de sa classe, commentaires de comportement |
+| Surveillant     | Pointage global, incidents disciplinaires           |
+| Direction / CPE | Supervision, sanction, rapport complet              |
+| Parent / Élève  | Visualisation de son historique uniquement          |
+
+---
+
+## 🗄️ **Modèle de données SQL simplifié**
+
+```sql
+CREATE TABLE presences (
+  id SERIAL PRIMARY KEY,
+  apprenant_id INTEGER REFERENCES apprenants(id),
+  classe_id INTEGER REFERENCES classes(id),
+  date_presence DATE NOT NULL,
+  periode_jour VARCHAR(20) CHECK (periode_jour IN ('matin', 'apres-midi')),
+  statut_presence VARCHAR(20) CHECK (statut_presence IN ('present', 'absent', 'retard', 'sortie')),
+  heure_arrivee TIME,
+  justification TEXT,
+  enseignant_id INTEGER REFERENCES utilisateurs(id),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE comportements (
+  id SERIAL PRIMARY KEY,
+  apprenant_id INTEGER REFERENCES apprenants(id),
+  date_incident DATE NOT NULL,
+  type_comportement VARCHAR(100),
+  niveau_gravite VARCHAR(20) CHECK (niveau_gravite IN ('leger', 'moyen', 'grave')),
+  description TEXT,
+  enseignant_id INTEGER REFERENCES utilisateurs(id),
+  statut_traitement VARCHAR(30) DEFAULT 'non traité',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE sanctions (
+  id SERIAL PRIMARY KEY,
+  comportement_id INTEGER REFERENCES comportements(id),
+  type_sanction VARCHAR(50),
+  description TEXT,
+  date_sanction DATE,
+  duree_jours INTEGER,
+  documents_justificatifs TEXT,
+  personnel_id INTEGER REFERENCES utilisateurs(id),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+---
+
+## ✅ **Cas d’usage typiques**
+
+| Cas d’usage                    | Description                                              |
+| ------------------------------ | -------------------------------------------------------- |
+| Pointage du matin en 6e B      | Le professeur d’accueil coche les absents et retards     |
+| Alerte SMS à un parent         | L’élève est absent sans justification → alerte immédiate |
+| Saisie d’un incident           | L’élève X insulte un enseignant → comportement saisi     |
+| Rapport mensuel des absences   | Export Excel des absences par classe                     |
+| Fiche disciplinaire d’un élève | Historique de tous les incidents et sanctions            |
+
+---
+
+## 💡 **Fonctionnalités avancées proposées**
+
+* 🔄 Intégration au bulletin trimestriel (absences, retards, discipline)
+* 📅 Corrélation avec l'emploi du temps pour vérifier les absences matière par matière
+* 📸 Ajout de fichiers justificatifs (image, PDF) pour absences
+* 🧠 IA possible pour détection automatique d’élèves à risque
+
+---
+
+Voici le **Module 7 : Gestion financière** détaillé, tel qu’il doit être développé dans le système de gestion scolaire. Ce module centralise la **gestion des flux financiers** de l’établissement : scolarité, salaires, paiements en ligne, etc.
+
+---
+
+## 🧾 **Module 7 : Gestion financière**
+
+---
+
+### 🔹 1. **Gestion des frais de scolarité**
+
+* **Définition des frais par classe et par année académique**
+
+  * Frais de scolarité principaux (par classe, sous-système, filière…)
+  * Frais d'examen (pour classes d'examen uniquement)
+  * Frais spécifiques par élève (au cas par cas)
+
+* **Périodicité configurable**
+
+  * Paiement unique ou en tranches (mensuel, trimestriel, semestriel)
+  * Dates d’échéance définies par l’administration
+
+* **Système de remise**
+
+  * Remises personnalisées (pour familles nombreuses, bourses…)
+  * Historique et justification obligatoire
+
+* **Pénalités de retard**
+
+  * Pourcentage ou montant fixe défini
+  * Calcul automatique après dépassement de la date limite
+
+---
+
+### 🔹 2. **Gestion des paiements**
+
+* **Méthodes de paiement autorisées :**
+
+  * **Paiement manuel** : espèces, chèques
+  * **Paiement en ligne** :
+
+    * Orange Money
+    * MTN Mobile Money
+    * Intégration API bancaire (CB, virements)
+    * Stripe / PayPal (optionnel)
+
+* **Suivi des paiements**
+
+  * Par élève
+  * Par période
+  * Par mode de paiement
+  * Récapitulatif annuel et historique
+
+* **Reçus téléchargeables** (PDF avec logo, signature)
+
+* **Notifications**
+
+  * Envoi automatique d’alertes de paiement
+  * Rappels par email/SMS/notifications mobiles
+
+---
+
+### 🔹 3. **Gestion des salaires du personnel**
+
+* **Catégories de personnel**
+
+  * Enseignants
+  * Administration (principal, censeur, économe…)
+  * Personnel d’entretien
+  * Chauffeurs de bus
+  * Personnel temporaire / stagiaires
+
+* **Paramètres du salaire**
+
+  * Salaire fixe mensuel
+  * Primes (heures supplémentaires, prime de rendement…)
+  * Retenues (absences non justifiées, avances…)
+
+* **Historique des salaires**
+
+  * Par employé
+  * Par mois
+  * Fiche de paie téléchargeable
+  * Journalisation des versements et générateur d’attestation
+
+* **Avances sur salaire**
+
+  * Possibilité d’octroi
+  * Déduction automatique des mois suivants
+  * Historique des avances
+
+---
+
+### 🔹 4. **Gestion des frais supplémentaires**
+
+* **Frais ponctuels**
+
+  * Excursions
+  * Uniformes
+  * Cotisations spécifiques (photocopies, livres…)
+
+* **Facturation rapide**
+
+  * Par élève, par classe ou globalement
+  * Date limite de paiement personnalisable
+  * Ajout de justificatifs
+
+---
+
+### 🔹 5. **Rapports et tableau de bord financier**
+
+* **Tableaux de bord pour l’économe / administration**
+
+  * Recettes par période
+  * Dépenses par poste
+  * État des paiements par classe et globalement
+
+* **Exports Excel/PDF**
+
+  * Journaux comptables
+  * Situation d’un élève ou groupe d’élèves
+  * Comptes-rendus mensuels
+
+* **Prévisionnel budgétaire**
+
+  * Projection des recettes selon les inscriptions et échéanciers
+  * Planification des dépenses
+
+* **Équilibrage**
+
+  * Comparaison automatique revenus / dépenses
+  * Alerte sur déséquilibres
+
+---
+
+### 🔹 6. **Sécurité & journalisation**
+
+* **Traçabilité de toutes les actions**
+
+  * Qui a effectué/modifié un paiement, un salaire, etc.
+  * Journal d’audit complet par opération
+
+* **Accès restreint par rôle**
+
+  * Économe, Principal : ajout / modification / suppression
+  * Enseignant : uniquement consultation (dans certains cas)
+  * Parent : uniquement ses paiements / reçus
+
+---
+
+### 🔹 7. **Intégration API (optionnel)**
+
+* Endpoint Swagger pour :
+
+  * Récupérer les états de paiement
+  * Déclarer un paiement externe
+  * Exporter les historiques
+
+---
+
+## 🎓 **Module 8 : Gestion des évaluations, bulletins et notes**
+
+---
+
+### 🎯 Objectif général
+
+Gérer l’ensemble du processus d’évaluation académique (notes, moyennes, bulletins), en assurant la cohérence avec le découpage académique (séquences, trimestres, année), tout en générant des bulletins structurés et exploitables avec statistiques pédagogiques.
+
+---
+
+### 🧱 Structure du module
+
+---
+
+#### 🔹 1. **Structure des périodes d’évaluation**
+
+* **Année scolaire** : divisée en **3 trimestres**
+* **Trimestre** : contient **2 séquences**
+* **Séquence** : période d’évaluation (ex. : 1er Oct. - 31 Oct.)
+
+| Année scolaire | Trimestres | Séquences |
+| -------------- | ---------- | --------- |
+| 2024–2025      | 3          | 6 (2/s)   |
+
+Chaque évaluation (note) est liée à une séquence précise.
+
+---
+
+#### 🔹 2. **Types d’évaluations**
+
+Chaque évaluation est catégorisée selon son type :
+
+* **Examen**
+* **Devoir**
+* **Interrogation**
+* **Participation**
+* **Travaux pratiques**
+* **Autre (paramétrable)**
+
+🛠️ *Les types sont définissables depuis l’interface d’administration.*
+
+Chaque type peut avoir un **poids relatif** dans le calcul de la note finale de la matière pour la séquence.
+
+---
+
+#### 🔹 3. **Catégorisation des matières**
+
+Les matières sont regroupées par **catégories pédagogiques** :
+
+* **Scientifiques**
+* **Littéraires**
+* **Sportives**
+* **Langues**
+* **Art et culture**
+* **Autres**
+
+🛠️ *Les catégories sont créées/modifiables par l’administrateur.*
+
+---
+
+#### 🔹 4. **Saisie des notes**
+
+* Saisie par les **enseignants affectés à une matière et classe**
+* Saisie par **type d’évaluation**
+* Possibilité de **limiter la saisie dans le temps** (ex : 1 semaine après fin de séquence)
+* **Appréciation facultative** par matière et par séquence
+* **Verrouillage automatique** après validation par la direction
+
+---
+
+#### 🔹 5. **Calculs automatiques**
+
+* **Par matière** : moyenne pondérée des types d’évaluations selon leur poids
+* **Séquence** : somme pondérée des moyennes des matières (avec leurs coefficients)
+* **Trimestre** : moyenne des 2 séquences associées
+* **Par catégorie** : moyenne des matières appartenant à cette catégorie
+* **Annuelle** : moyenne pondérée des 3 trimestres
+
+Exemple :
+
+```
+Moyenne Trimestre 1 = (Séquence 1 + Séquence 2) / 2
+```
+
+---
+
+#### 🔹 6. **Gestion des bulletins**
+
+* Affichage des notes :
+
+  * Par matière
+  * Par catégorie
+* Moyenne générale de l’élève
+* Moyenne par catégorie
+* Rang dans la classe
+* Effectif
+* Appréciation générale du conseil
+* Mention (Très bien, Bien, etc.)
+* Décision (Admis, Redouble, etc.)
+* Signature du chef d’établissement
+* Date de signature
+
+🧾 **Design personnalisable** :
+
+* Bannières, logo, entête, structure du tableau
+* Ajout d’éléments dynamiques (QR Code, signature auto, etc.)
+* Modèles de bulletin définis par l’administrateur
+
+📤 Export :
+
+* PDF téléchargeable
+* Accessible à l’élève, parent et administrateur
+* Historique par année et par période
+
+---
+
+#### 🔹 7. **Statistiques et indicateurs de performance**
+
+* **Par élève** :
+
+  * Évolution des moyennes séquentielles
+  * Moyenne annuelle
+  * Répartition des mentions
+* **Par matière / enseignant** :
+
+  * Taux de réussite
+  * Moyenne de classe
+* **Par classe** :
+
+  * Nombre d'élèves par mention
+  * Rang par matière
+* **Exports Excel/PDF** automatiques
+
+---
+
+#### 🔹 8. **Sécurité et contrôle**
+
+* Droits d’accès différenciés :
+
+  * Enseignant : saisie uniquement sur ses matières
+  * Censeur : supervision et validation
+  * Principal : génération bulletins
+* Historique de modifications (log)
+* Notifications lors des validations et clôtures
+
+---
+
+### ✅ Résumé des Entités impactées
+
+* `evaluations` (séquence, type, apprenant, matière, note)
+* `bulletins` (trimestre, année, apprenant, classe)
+* `moyennes` (séquence, trimestre, annuelle, par catégorie)
+* `types_evaluations` (libelle, poids)
+* `categories_matieres` (nom, description)
+* `appréciations`, `mentions`, `decisions`, `templates_bulletins`
+
+---
+
+---
+
+## 📬 **Module 9 : Messagerie interne, notifications et communications**
+
+---
+
+### 🎯 Objectif général
+
+Permettre une **communication fluide, ciblée et sécurisée** entre les différents acteurs du système (élèves, enseignants, parents, administration, personnel), via une **messagerie interne**, des **notifications dynamiques** et une **gestion intégrée des emails/SMS/appels**.
+
+---
+
+### 🧱 Sous-modules fonctionnels
+
+---
+
+### 🔹 1. **Messagerie interne (Chat & Groupes)**
+
+#### Fonctionnalités principales :
+
+* Envoi de **messages texte**, **fichiers** (PDF, image, audio), **liens**
+* **Groupes de discussion** (classes, groupes pédagogiques, administratifs, etc.)
+* Messagerie **individuelle (privée)** entre utilisateurs
+* **Historique des conversations**
+* État de lecture (vu / non vu)
+
+#### Utilisateurs concernés :
+
+* Tous les rôles : apprenant, enseignant, personnel, parent, administrateur
+
+#### État du système :
+
+* Un utilisateur peut créer une discussion privée ou de groupe
+* Chaque groupe possède un **administrateur du groupe**
+* Les messages sont enregistrés avec **horodatage**, **expéditeur**, **statut de lecture**
+
+#### Tables impliquées :
+
+* `chats` : id, message, fichier\_url, utilisateur\_id, destinataire\_id, groupe\_id, horodatage, lu
+* `groupes_chat` : id, nom, description, créé\_par, date\_creation
+* `participants_groupes_chat` : id, groupe\_id, utilisateur\_id, rôle (admin/membre)
+
+#### Contraintes :
+
+* L'envoi de pièces jointes est limité en taille et type
+* Les groupes peuvent être fermés ou ouverts à de nouveaux membres
+* Interface de modération pour l’admin du groupe
+
+---
+
+### 🔹 2. **Notifications internes**
+
+#### Types de notifications :
+
+* 📚 Événements académiques (nouvelle note, emploi du temps mis à jour)
+* 💬 Nouveau message / annonce
+* 📄 Nouveau document disponible
+* 💵 Paiement reçu ou en attente
+* 🎯 Événement à venir (réunion, conseil de classe)
+* ⚠️ Alerte (sanction, absence, discipline)
+
+#### Canal :
+
+* Interface web
+* Push Notification mobile (React Native)
+* Email
+* SMS (optionnel, dépend des intégrations)
+
+#### Tables :
+
+* `notifications` : id, utilisateur\_id, titre, message, type, niveau\_urgence, lu, date\_creation
+* `notification_settings` : utilisateur\_id, canal (email/sms/app/push), activé
+
+#### État du système :
+
+* Chaque utilisateur peut **configurer ses préférences** de notification
+* Les notifications importantes sont marquées comme **urgentes**
+* Les messages peuvent être cliquables (liens dynamiques vers l’élément concerné)
+
+---
+
+### 🔹 3. **Emails et SMS (communication externe)**
+
+#### Fonctionnalités :
+
+* Envoi d’emails :
+
+  * Automatiques (bulletins, rappels de paiement, convocations)
+  * Manuels (envoyés par un administrateur)
+* Envoi de SMS :
+
+  * Confirmation d’inscription
+  * Absence / retard
+  * Alertes urgentes
+
+#### Tables :
+
+* `emails_envoyes` : id, destinataire\_email, sujet, contenu, fichier\_joint, envoyé\_par, date\_envoi
+* `sms_envoyes` : id, numero, contenu, utilisateur\_id, envoyé\_par, date\_envoi
+
+#### API à intégrer :
+
+* Email : SMTP, Mailgun, Sendgrid (configurable)
+* SMS : Twilio, Orange SMS API, ou local SMS Gateway
+
+#### Journalisation :
+
+* Historique de tous les envois, succès ou échec
+* Rejouer un envoi si erreur détectée
+* Suivi de délivrabilité (email ouvert, cliqué)
+
+---
+
+### 🔹 4. **Annonces et actualités**
+
+#### Fonctionnalités :
+
+* Création d’annonces visibles sur :
+
+  * Le tableau de bord
+  * L’accueil mobile
+* Ciblage par classe, niveau, groupe, rôle
+* Ajout de documents ou images
+* Paramétrage de durée d’affichage
+
+#### Tables :
+
+* `annonces` : id, titre, contenu, cible (classe/groupe/role), date\_debut, date\_fin, publié\_par
+
+---
+
+### ✅ Droits d’accès par rôle
+
+| Action / Rôle               | Apprenant | Parent | Enseignant | Admin | Personnel |
+| --------------------------- | --------- | ------ | ---------- | ----- | --------- |
+| Envoyer message privé       | ✅         | ✅      | ✅          | ✅     | ✅         |
+| Créer groupe de discussion  | ❌         | ❌      | ✅          | ✅     | ✅         |
+| Recevoir notification       | ✅         | ✅      | ✅          | ✅     | ✅         |
+| Envoyer email/sms           | ❌         | ❌      | ❌          | ✅     | ❌         |
+| Publier une annonce         | ❌         | ❌      | ✅          | ✅     | ✅         |
+| Personnaliser notifications | ✅         | ✅      | ✅          | ✅     | ✅         |
+
+---
+
+### 📊 Exemples d’interface
+
+* **Centre de notifications** avec tri (par date, type, urgence)
+* **Zone de chat** (web et mobile) avec recherche, pièces jointes
+* **Historique des communications** (email/SMS/notifications) dans le profil utilisateur
+* **Module d’envoi groupé** avec filtre dynamique (par niveau, rôle, classe, etc.)
+
+---
+
+## 📦 Script SQL – Module 9 : Messagerie, Notifications, Emails, SMS
+
+```sql
+-- ================================
+-- 1. Messagerie (chat & groupes)
+-- ================================
+
+CREATE TABLE groupes_chat (
+    id SERIAL PRIMARY KEY,
+    nom VARCHAR(255) NOT NULL UNIQUE,
+    description TEXT,
+    cree_par INTEGER NOT NULL REFERENCES utilisateurs(id) ON DELETE CASCADE,
+    date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE participants_groupes_chat (
+    id SERIAL PRIMARY KEY,
+    groupe_id INTEGER NOT NULL REFERENCES groupes_chat(id) ON DELETE CASCADE,
+    utilisateur_id INTEGER NOT NULL REFERENCES utilisateurs(id) ON DELETE CASCADE,
+    role VARCHAR(50) CHECK (role IN ('admin', 'membre')) DEFAULT 'membre',
+    UNIQUE(groupe_id, utilisateur_id)
+);
+
+CREATE TABLE chats (
+    id SERIAL PRIMARY KEY,
+    message TEXT,
+    fichier_url TEXT,
+    expediteur_id INTEGER NOT NULL REFERENCES utilisateurs(id) ON DELETE CASCADE,
+    destinataire_id INTEGER REFERENCES utilisateurs(id) ON DELETE CASCADE,
+    groupe_id INTEGER REFERENCES groupes_chat(id) ON DELETE CASCADE,
+    horodatage TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    lu BOOLEAN DEFAULT FALSE,
+    CHECK (
+        (groupe_id IS NOT NULL AND destinataire_id IS NULL) OR 
+        (groupe_id IS NULL AND destinataire_id IS NOT NULL)
+    )
+);
+
+-- ================================
+-- 2. Notifications internes
+-- ================================
+
+CREATE TABLE notifications (
+    id SERIAL PRIMARY KEY,
+    utilisateur_id INTEGER NOT NULL REFERENCES utilisateurs(id) ON DELETE CASCADE,
+    titre VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    type VARCHAR(100), -- ex: 'paiement', 'note', 'absences'
+    niveau_urgence VARCHAR(50) CHECK (niveau_urgence IN ('normal', 'important', 'critique')) DEFAULT 'normal',
+    lu BOOLEAN DEFAULT FALSE,
+    date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE notification_settings (
+    id SERIAL PRIMARY KEY,
+    utilisateur_id INTEGER UNIQUE NOT NULL REFERENCES utilisateurs(id) ON DELETE CASCADE,
+    canal_email BOOLEAN DEFAULT TRUE,
+    canal_sms BOOLEAN DEFAULT FALSE,
+    canal_push BOOLEAN DEFAULT TRUE
+);
+
+-- ================================
+-- 3. Emails et SMS (historique)
+-- ================================
+
+CREATE TABLE emails_envoyes (
+    id SERIAL PRIMARY KEY,
+    destinataire_email VARCHAR(255) NOT NULL,
+    sujet VARCHAR(255),
+    contenu TEXT NOT NULL,
+    fichier_joint TEXT,
+    envoye_par INTEGER REFERENCES utilisateurs(id),
+    date_envoi TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    etat_envoi VARCHAR(50) DEFAULT 'envoyé' -- ou 'échoué', 'en attente'
+);
+
+CREATE TABLE sms_envoyes (
+    id SERIAL PRIMARY KEY,
+    numero VARCHAR(20) NOT NULL,
+    contenu TEXT NOT NULL,
+    utilisateur_id INTEGER REFERENCES utilisateurs(id),
+    envoye_par INTEGER REFERENCES utilisateurs(id),
+    date_envoi TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    etat_envoi VARCHAR(50) DEFAULT 'envoyé'
+);
+
+-- ================================
+-- 4. Annonces / Actualités
+-- ================================
+
+CREATE TABLE annonces (
+    id SERIAL PRIMARY KEY,
+    titre VARCHAR(255) NOT NULL,
+    contenu TEXT NOT NULL,
+    cible_type VARCHAR(50) CHECK (cible_type IN ('classe', 'groupe', 'role', 'tous')) NOT NULL,
+    cible_id INTEGER, -- Peut référencer classe_id, groupe_id ou être NULL pour "tous"
+    date_debut DATE NOT NULL,
+    date_fin DATE NOT NULL,
+    publie_par INTEGER REFERENCES utilisateurs(id),
+    date_publication TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+---
+
+## 🔐 Notes importantes
+
+* La table `utilisateurs` est supposée déjà existante avec `id` comme clé primaire.
+* Les tables sont sécurisées avec `ON DELETE CASCADE` pour garder la base cohérente.
+* Vous pouvez ajouter des **triggers** pour envoyer automatiquement des emails/SMS depuis `notifications` ou `emails_envoyes` via intégration externe.
+
+---
+
+
+Voici le **Module 10** détaillé : **Gestion documentaire, bibliothèque et stocks**, avec toutes les explications fonctionnelles + le **script SQL complet des tables** pour que chaque fonctionnalité puisse être implémentée directement par un développeur.
+
+---
+
+## ✅ Module 10 : Gestion documentaire, bibliothèque et stocks
+
+Ce module regroupe trois grandes fonctionnalités :
+
+---
+
+### 🔹 A. Gestion documentaire (documents administratifs et scolaires)
+
+**Fonctionnalités :**
+
+* Upload, consultation et partage des documents (PDF, images, Word, etc.).
+* Classement par type, catégorie et utilisateur concerné.
+* Gestion des droits d’accès : public, restreint à une classe/groupe/parent ou personnel.
+* Historique de téléchargement, modification et versionnage.
+* Signature numérique possible (version pro/facultative).
+* Archivage automatique en fin d’année scolaire.
+
+---
+
+### 🔹 B. Gestion de bibliothèque scolaire
+
+**Fonctionnalités :**
+
+* Catalogue des ouvrages (livres, manuels, supports numériques...).
+* Fiches détaillées : titre, auteur, ISBN, niveau conseillé, image de couverture.
+* Gestion des prêts (date d’emprunt, retour, pénalités de retard).
+* Historique de lecture par élève.
+* Notifications en cas de retard.
+* Suivi du stock réel des ouvrages.
+
+---
+
+### 🔹 C. Gestion du matériel scolaire et stock
+
+**Fonctionnalités :**
+
+* Suivi des stocks d’objets matériels (craies, cahiers, ordinateurs, uniformes...).
+* Entrées/sorties de stock (achats, dons, distributions).
+* Alertes de seuil critique.
+* Attribution de matériel à un personnel ou élève (ex : uniforme, tablette).
+* Historique d’utilisation par matériel.
+
+---
+
+## 📦 Script SQL – Module 10 (PostgreSQL)
+
+```sql
+-- =============================
+-- A. Gestion Documentaire
+-- =============================
+
+CREATE TABLE documents (
+    id SERIAL PRIMARY KEY,
+    titre VARCHAR(255) NOT NULL,
+    description TEXT,
+    fichier_url TEXT NOT NULL,
+    type_document VARCHAR(100), -- ex: "bulletin", "rapport", "planning", etc.
+    niveau_acces VARCHAR(50) CHECK (niveau_acces IN ('public', 'restreint', 'prive')) DEFAULT 'prive',
+    utilisateur_cible_id INTEGER REFERENCES utilisateurs(id),
+    classe_cible_id INTEGER REFERENCES classes(id),
+    uploader_id INTEGER NOT NULL REFERENCES utilisateurs(id),
+    date_upload TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    version VARCHAR(50) DEFAULT '1.0'
+);
+
+-- Historique des téléchargements
+CREATE TABLE telechargements_documents (
+    id SERIAL PRIMARY KEY,
+    document_id INTEGER NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    utilisateur_id INTEGER NOT NULL REFERENCES utilisateurs(id),
+    date_telechargement TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =============================
+-- B. Bibliothèque scolaire
+-- =============================
+
+CREATE TABLE ouvrages (
+    id SERIAL PRIMARY KEY,
+    titre VARCHAR(255) NOT NULL,
+    auteur VARCHAR(255),
+    isbn VARCHAR(20) UNIQUE,
+    niveau_conseille VARCHAR(100),
+    nombre_exemplaires INTEGER DEFAULT 1 CHECK (nombre_exemplaires >= 0),
+    couverture_url TEXT,
+    resume TEXT
+);
+
+CREATE TABLE prets_ouvrages (
+    id SERIAL PRIMARY KEY,
+    ouvrage_id INTEGER NOT NULL REFERENCES ouvrages(id),
+    apprenant_id INTEGER NOT NULL REFERENCES apprenants(id),
+    date_pret DATE NOT NULL,
+    date_retour_prevue DATE,
+    date_retour_effective DATE,
+    penalite_montant NUMERIC(10,2) DEFAULT 0.00,
+    statut VARCHAR(50) CHECK (statut IN ('en cours', 'retourne', 'retard')) DEFAULT 'en cours'
+);
+
+-- =============================
+-- C. Matériel scolaire & stock
+-- =============================
+
+CREATE TABLE materiels (
+    id SERIAL PRIMARY KEY,
+    nom VARCHAR(255) NOT NULL,
+    description TEXT,
+    quantite_disponible INTEGER DEFAULT 0,
+    seuil_alerte INTEGER DEFAULT 5,
+    unite VARCHAR(50) DEFAULT 'unité',
+    categorie VARCHAR(100),
+    lieu_stockage VARCHAR(255)
+);
+
+CREATE TABLE mouvements_stock (
+    id SERIAL PRIMARY KEY,
+    materiel_id INTEGER NOT NULL REFERENCES materiels(id),
+    type_mouvement VARCHAR(50) CHECK (type_mouvement IN ('entrée', 'sortie')),
+    quantite INTEGER NOT NULL CHECK (quantite > 0),
+    date_mouvement TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    responsable_id INTEGER REFERENCES utilisateurs(id),
+    motif TEXT
+);
+
+CREATE TABLE attributions_materiel (
+    id SERIAL PRIMARY KEY,
+    materiel_id INTEGER NOT NULL REFERENCES materiels(id),
+    type_beneficiaire VARCHAR(50) CHECK (type_beneficiaire IN ('apprenant', 'personnel')) NOT NULL,
+    beneficiaire_id INTEGER NOT NULL,
+    date_attribution TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    quantite INTEGER CHECK (quantite > 0),
+    commentaire TEXT
+);
+```
+
+---
+
+## 🧠 Conseils techniques :
+
+* Pour les **attributions de matériel**, vous pouvez soit :
+
+  * Utiliser une jointure polymorphe (`beneficiaire_id` + `type_beneficiaire`), comme ci-dessus.
+  * Ou bien créer deux tables séparées (si votre ORM n'aime pas le polymorphisme).
+* Vous pouvez ajouter un moteur de recherche full-text sur `documents` et `ouvrages`.
+
+---
+Voici le **Module 11** du cahier de charge détaillé : **Transport scolaire et itinéraires**, avec ses fonctionnalités complètes et son **modèle de données SQL** prêt à être utilisé pour développement.
+
+---
+
+## ✅ Module 11 : Transport scolaire et itinéraires
+
+Ce module permet à l’établissement de gérer efficacement l’ensemble du système de transport des élèves, enseignants et personnels : bus, chauffeurs, arrêts, trajets, affectations et suivi.
+
+---
+
+### 🔹 Objectifs
+
+* Planifier les trajets quotidiens des bus scolaires.
+* Suivre les itinéraires, horaires et élèves affectés.
+* Gérer les chauffeurs, leurs affectations et leurs véhicules.
+* Assurer un système de traçabilité, de sécurité et de ponctualité.
+
+---
+
+### 🔸 Fonctionnalités
+
+#### A. Gestion des bus scolaires
+
+* Ajout et gestion des bus : numéro de plaque, capacité, statut, assurance.
+* Historique d’entretien ou panne.
+* Association d’un chauffeur à un bus.
+
+#### B. Gestion des chauffeurs
+
+* Enregistrement des chauffeurs avec leurs informations personnelles, permis, contacts.
+* Attribution d’un ou plusieurs bus.
+* Historique d’activité.
+
+#### C. Gestion des itinéraires
+
+* Création d’un trajet avec un nom, une ligne (ex : Ligne A), un point de départ et un point d’arrivée.
+* Définition des **arrêts** avec ordre, horaire prévu, latitude/longitude.
+* Lien entre un trajet, un bus et un chauffeur.
+
+#### D. Affectation des usagers (élèves/personnels)
+
+* Inscription d’un élève ou personnel à un trajet/arrêt.
+* Précision du jour (lundi au vendredi) ou d’une période (ex : 1er trimestre).
+* Suivi des présences à bord (via pointage manuel ou NFC/RFID plus tard).
+* Visualisation du planning de transport pour un usager.
+
+#### E. Historique et journalisation
+
+* Historique des trajets effectués, retards, incidents.
+* Notifications envoyées en cas de changement de ligne ou de retard important.
+
+---
+
+## 🧩 Script SQL – Module 11 : Transport scolaire
+
+```sql
+-- ============================
+-- 1. Table des bus
+-- ============================
+CREATE TABLE bus (
+    id SERIAL PRIMARY KEY,
+    numero_plaque VARCHAR(50) UNIQUE NOT NULL,
+    capacite INTEGER NOT NULL CHECK (capacite > 0),
+    statut VARCHAR(50) CHECK (statut IN ('actif', 'en maintenance', 'hors service')) DEFAULT 'actif',
+    date_mise_en_service DATE,
+    date_assurance DATE,
+    commentaires TEXT
+);
+
+-- ============================
+-- 2. Table des chauffeurs
+-- ============================
+CREATE TABLE chauffeurs (
+    id SERIAL PRIMARY KEY,
+    nom VARCHAR(100) NOT NULL,
+    prenom VARCHAR(100),
+    telephone VARCHAR(20),
+    email VARCHAR(100),
+    numero_permis VARCHAR(100) UNIQUE,
+    date_expiration_permis DATE,
+    adresse TEXT
+);
+
+-- ============================
+-- 3. Association bus <-> chauffeur
+-- ============================
+CREATE TABLE bus_chauffeurs (
+    id SERIAL PRIMARY KEY,
+    bus_id INTEGER REFERENCES bus(id) ON DELETE CASCADE,
+    chauffeur_id INTEGER REFERENCES chauffeurs(id) ON DELETE SET NULL,
+    date_affectation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    actif BOOLEAN DEFAULT TRUE
+);
+
+-- ============================
+-- 4. Table des itinéraires
+-- ============================
+CREATE TABLE itineraires (
+    id SERIAL PRIMARY KEY,
+    nom VARCHAR(255) NOT NULL,       -- Ex : "Trajet Nord-Est"
+    ligne_code VARCHAR(50),          -- Ex : "Ligne A"
+    point_depart VARCHAR(255),
+    point_arrivee VARCHAR(255),
+    distance_km NUMERIC(6,2),
+    duree_estimee_minutes INTEGER,
+    bus_id INTEGER REFERENCES bus(id),
+    chauffeur_id INTEGER REFERENCES chauffeurs(id)
+);
+
+-- ============================
+-- 5. Table des arrêts de bus
+-- ============================
+CREATE TABLE arrets (
+    id SERIAL PRIMARY KEY,
+    nom VARCHAR(255) NOT NULL,
+    adresse TEXT,
+    latitude DOUBLE PRECISION,
+    longitude DOUBLE PRECISION
+);
+
+-- ============================
+-- 6. Liaison arrêt <-> itinéraire
+-- ============================
+CREATE TABLE itineraires_arrets (
+    id SERIAL PRIMARY KEY,
+    itineraire_id INTEGER REFERENCES itineraires(id) ON DELETE CASCADE,
+    arret_id INTEGER REFERENCES arrets(id),
+    ordre_passage INTEGER NOT NULL,
+    heure_prevue TIME
+);
+
+-- ============================
+-- 7. Affectation des usagers (élèves ou personnels)
+-- ============================
+CREATE TABLE affectations_transport (
+    id SERIAL PRIMARY KEY,
+    itineraire_id INTEGER REFERENCES itineraires(id),
+    arret_id INTEGER REFERENCES arrets(id),
+    usager_type VARCHAR(50) CHECK (usager_type IN ('apprenant', 'personnel')) NOT NULL,
+    usager_id INTEGER NOT NULL,
+    jours_semaine VARCHAR(100), -- Ex: "lundi,mardi,mercredi"
+    periode TEXT, -- Ex : "Trimestre 1", "Année Scolaire 2024-2025"
+    date_affectation DATE DEFAULT CURRENT_DATE
+);
+
+-- ============================
+-- 8. Historique des trajets
+-- ============================
+CREATE TABLE historiques_trajets (
+    id SERIAL PRIMARY KEY,
+    itineraire_id INTEGER REFERENCES itineraires(id),
+    date_trajet DATE NOT NULL,
+    heure_depart TIME,
+    heure_arrivee TIME,
+    incidents TEXT,
+    conducteur_id INTEGER REFERENCES chauffeurs(id)
+);
+```
+
+---
+
+## 🧠 Suggestions pour aller plus loin
+
+* **Ajout futur** : Intégration GPS pour le suivi en temps réel des bus.
+* QR Code / RFID pour présence des élèves à bord.
+* Application mobile dédiée aux chauffeurs pour voir leur trajet du jour.
+
+---
+Voici la **mise à jour complète et détaillée du Module 12 : Gestion des départements pédagogiques**, prenant en compte votre précision sur la relation multiple entre matières et départements :
+
+---
+
+## 📘 **Module 12 : Gestion des départements pédagogiques (Mise à jour)**
+
+### 🎯 Objectif
+
+Permettre à l’administration de l’établissement de créer, gérer et structurer des **départements pédagogiques** regroupant des matières, des enseignants responsables, et servant de base à l’analyse pédagogique (bulletins, statistiques, etc.).
+
+---
+
+### ⚙️ **Fonctionnalités principales**
+
+1. **Création et gestion des départements**
+
+   * Création de départements pédagogiques (ex. : Littéraire, Scientifique, Sportif, Technique, etc.).
+   * Possibilité de définir un **responsable de département** (enseignant ou personnel).
+   * Description, code, couleur d’identification.
+
+2. **Association de matières aux départements**
+
+   * Une **matière peut appartenir à plusieurs départements**.
+   * Définition du **type de rattachement** : `principale`, `optionnelle`, `secondaire`, etc.
+   * Affectation visible dans les bulletins et les statistiques.
+
+3. **Affichage et organisation**
+
+   * Liste des matières par département.
+   * Liste des enseignants par département.
+   * Possibilité d’ajouter des **documents partagés** par département.
+
+4. **Utilisation dans les autres modules**
+
+   * **Bulletins** : regroupement des matières par départements avec moyennes par catégorie.
+   * **Statistiques pédagogiques** : analyse des résultats par département.
+   * **Gestion des emplois du temps** : filtrage des matières par département.
+
+---
+
+### 🧩 **Modèle de données SQL**
+
+```sql
+-- Table des départements
+CREATE TABLE departements (
+    id SERIAL PRIMARY KEY,
+    nom VARCHAR(100) NOT NULL UNIQUE,
+    description TEXT,
+    code VARCHAR(20) UNIQUE,
+    couleur VARCHAR(10),
+    responsable_id INTEGER REFERENCES utilisateurs(id)
+);
+
+-- Table des matières (existe déjà)
+-- La table matieres existe dans le module 4
+
+-- Table pivot : association matières <-> départements
+CREATE TABLE matieres_departements (
+    id SERIAL PRIMARY KEY,
+    matiere_id INTEGER NOT NULL REFERENCES matieres(id) ON DELETE CASCADE,
+    departement_id INTEGER NOT NULL REFERENCES departements(id) ON DELETE CASCADE,
+    type_matiere VARCHAR(50) DEFAULT 'principale', -- principale, secondaire, optionnelle
+    UNIQUE(matiere_id, departement_id)
+);
+```
+
+---
+
+### 🧮 **Exemples d’usage**
+
+* **Mathématiques** :
+
+  * Rattachée à *Département Scientifique* en tant que *principale*.
+  * Rattachée à *Département Littéraire* en tant que *secondaire*.
+
+* **Éducation Physique** :
+
+  * Rattachée uniquement au *Département Sportif*.
+
+---
+
+### 📌 **Autorisations et rôles**
+
+* Seuls les utilisateurs avec les droits : `gestion_departements` peuvent créer/modifier les départements.
+* Les enseignants peuvent consulter leur département et les documents liés.
+* Le responsable de département peut :
+
+  * Gérer les documents pédagogiques.
+  * Consulter les statistiques de son département.
+  * Proposer des affectations de matières.
+
+---
+
+### 📊 **Intégration aux bulletins**
+
+Les bulletins affichent :
+
+* Les matières regroupées par département (catégories).
+* Moyennes par département visibles dans l’en-tête.
+* Statistiques sur la performance de l’apprenant par bloc pédagogique.
+
+---
+
+Merci pour la précision. Voici la **mise à jour complète et finale du Module 12 : Gestion des départements pédagogiques**, en tenant compte des fonctionnalités **complètes**, notamment :
+
+* **Création et gestion des départements**
+* **Suivi des départements**
+* **Administration des départements**
+
+---
+
+## ✅ **Module 12 : Gestion des Départements Pédagogiques – Détails Approfondis**
+
+---
+
+### 🎯 Objectif du module
+
+Permettre à l’établissement de structurer l’enseignement en **départements pédagogiques**, d’y affecter des matières, enseignants, responsables, et de suivre les performances pédagogiques spécifiques à chaque bloc disciplinaire.
+
+---
+
+## 1. 🛠️ **Création et Gestion des Départements**
+
+### Fonctionnalités
+
+* Création d’un **département** avec les champs suivants :
+
+  * Nom du département (ex: Scientifique, Littéraire, Sportif)
+  * Code unique
+  * Description
+  * Couleur ou icône d’identification
+  * Département parent (hiérarchie éventuelle)
+  * Actif / inactif
+* Affectation :
+
+  * **Responsable du département** (référence à un utilisateur ou enseignant)
+  * **Enseignants membres**
+  * **Matières** rattachées (une matière pouvant appartenir à plusieurs départements avec différents types)
+* Droits d’accès à définir :
+
+  * Lecture seule
+  * Gestion complète (ajout/suppression matières/enseignants)
+  * Statistiques du département
+
+---
+
+## 2. 📊 **Suivi des Départements**
+
+### Fonctionnalités
+
+* **Suivi pédagogique**
+
+  * Moyennes par département pour chaque élève/classe/période
+  * Classement par département
+  * Statistiques : taux de réussite, moyenne générale du département, dispersion, matière la plus faible/forte du département
+
+* **Visualisation des bulletins par bloc**
+
+  * Affichage des matières classées par département
+  * Moyenne par département dans les bulletins
+  * Coefficients spécifiques aux départements
+
+* **Alertes pédagogiques**
+
+  * Moyenne d’un département < seuil défini → Alerte
+  * Évolution négative sur 2 périodes → Notification responsable
+
+---
+
+## 3. 🧑‍💼 **Administration des Départements**
+
+### Fonctionnalités
+
+* Gestion des **documents communs au département**
+
+  * Politiques d’enseignement
+  * Programmes
+  * Exercices mutualisés
+  * Comptes-rendus
+
+* Gestion des **réunions de département**
+
+  * Dates de réunion, comptes-rendus, présence
+
+* **Communication interne au département**
+
+  * Chat ou email interne entre membres du département
+  * Annonces internes au département (ex : planning des conseils, consignes)
+
+* **Historique**
+
+  * Historique des affectations de matières
+  * Historique des responsables
+  * Historique des performances trimestrielles/séquentielles
+
+---
+
+## 🔐 **Gestion des rôles et permissions**
+
+* Seuls les utilisateurs avec rôle `Admin Département` ou autorisation explicite peuvent :
+
+  * Créer ou modifier un département
+  * Affecter enseignants ou matières
+  * Consulter les statistiques internes
+* Le **responsable de département** peut :
+
+  * Ajouter des ressources internes
+  * Envoyer des messages à ses membres
+  * Suivre les performances
+
+---
+
+## 🧩 **Structure SQL simplifiée (extrait)**
+
+```sql
+-- Table des départements
+CREATE TABLE departements (
+    id SERIAL PRIMARY KEY,
+    nom VARCHAR(100) NOT NULL UNIQUE,
+    code VARCHAR(20) UNIQUE,
+    description TEXT,
+    couleur VARCHAR(10),
+    actif BOOLEAN DEFAULT TRUE,
+    responsable_id INTEGER REFERENCES utilisateurs(id),
+    parent_id INTEGER REFERENCES departements(id)
+);
+
+-- Table pivot matières ↔ départements
+CREATE TABLE matieres_departements (
+    id SERIAL PRIMARY KEY,
+    matiere_id INTEGER NOT NULL REFERENCES matieres(id) ON DELETE CASCADE,
+    departement_id INTEGER NOT NULL REFERENCES departements(id) ON DELETE CASCADE,
+    type_matiere VARCHAR(50) DEFAULT 'principale', -- principale, secondaire, optionnelle
+    UNIQUE(matiere_id, departement_id)
+);
+
+-- Table des membres du département
+CREATE TABLE membres_departements (
+    id SERIAL PRIMARY KEY,
+    utilisateur_id INTEGER NOT NULL REFERENCES utilisateurs(id),
+    departement_id INTEGER NOT NULL REFERENCES departements(id),
+    role_in_departement VARCHAR(50), -- membre, coordinateur, rédacteur
+    date_affectation DATE DEFAULT CURRENT_DATE,
+    UNIQUE(utilisateur_id, departement_id)
+);
+```
+
+---
+
+## 📌 Exemple d’usage
+
+* La matière **Mathématiques** est affectée à :
+
+  * *Département Scientifique* (type : principale)
+  * *Département Littéraire* (type : secondaire)
+* Le professeur **M. Tchinda** est membre de deux départements.
+* Le bulletin de l’élève affiche :
+
+  * Bloc "Scientifique" : Mathématiques, Physique, Chimie + moyenne du bloc
+  * Bloc "Littéraire" : Français, Histoire, Philosophie + moyenne du bloc
+
+---
+
+Voici la **fiche détaillée** pour le **Module 13 : Gestion des Emails et Communications Externes**, qui s’intègre parfaitement dans un système de gestion scolaire complet.
+
+---
+
+## 📬 **Module 13 : Gestion des Emails et Communications Externes**
+
+---
+
+### 🎯 Objectif du module
+
+Permettre à l’école d’interagir efficacement avec les parents, élèves, enseignants et partenaires **en dehors** de la plateforme via des **emails personnalisés**, des **notifications programmées**, des **newsletters**, des **confirmations d’inscription**, des **reçus**, etc.
+
+---
+
+## 1. ✉️ **Envoi d’Emails Externes**
+
+### Fonctionnalités principales :
+
+* Envoi d’emails automatiques ou manuels vers :
+
+  * Apprenants
+  * Parents
+  * Enseignants
+  * Employés
+  * Partenaires
+* Templates prédéfinis :
+
+  * Confirmation d’inscription / admission
+  * Paiement reçu / facture
+  * Convocation à une réunion
+  * Notification de bulletin ou résultat
+  * Absence prolongée
+  * Messages de début/fin d’année
+* Signature personnalisée de l’établissement
+* Gestion des pièces jointes (reçus, bulletins, documents officiels)
+
+---
+
+## 2. 🗓️ **Planification & Suivi**
+
+### Fonctionnalités :
+
+* Programmation des campagnes :
+
+  * Par date
+  * Par événement (ex : bulletin validé, paiement reçu)
+* Segmentation des destinataires :
+
+  * Par classe, niveau, rôle, statut d’inscription, etc.
+* Suivi des statuts d’envoi :
+
+  * Envoyé, Échec, Ouvert, Cliqué
+* Historique complet des envois avec filtres
+* Relance automatique configurable
+
+---
+
+## 3. 🧩 **Modèles d’Emails Dynamiques**
+
+### Champs dynamiques pour modèles :
+
+* `{nom_apprenant}`, `{nom_parent}`, `{classe}`, `{montant_paye}`, `{date}`, `{lien_bulletin}`, etc.
+
+### Gestion des modèles :
+
+* Création, modification, activation/désactivation
+* Aperçu avant envoi
+* Gestion multi-langues (français/anglais)
+
+---
+
+## 4. 🔒 **Journalisation & Sécurité**
+
+* Journal d’audit de tous les emails envoyés
+* Journal par utilisateur (emetteur et destinataire)
+* Droits d’accès :
+
+  * Envoi par rôles autorisés (ex: Direction, Secrétariat)
+  * Visualisation du journal d’envoi par administrateurs
+
+---
+
+## 5. 🛠️ **Paramétrage SMTP & API externes**
+
+### Fonctionnalités :
+
+* Intégration de serveurs SMTP personnalisés :
+
+  * Gmail, Outlook, Mailgun, Sendinblue, etc.
+* Gestion des clés API pour :
+
+  * Email transactionnel
+  * Email marketing
+* Test de connexion SMTP
+
+---
+
+## 🧱 **Structure SQL simplifiée**
+
+```sql
+-- Modèles d’emails
+CREATE TABLE email_templates (
+    id SERIAL PRIMARY KEY,
+    nom VARCHAR(100) NOT NULL,
+    sujet VARCHAR(200) NOT NULL,
+    corps TEXT NOT NULL,
+    langue VARCHAR(10) DEFAULT 'fr',
+    actif BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Campagnes d’email (programmées ou immédiates)
+CREATE TABLE email_campaigns (
+    id SERIAL PRIMARY KEY,
+    template_id INTEGER REFERENCES email_templates(id),
+    sujet_personnalise VARCHAR(200),
+    corps_personnalise TEXT,
+    planifie_pour TIMESTAMP,
+    cree_par INTEGER REFERENCES utilisateurs(id),
+    statut VARCHAR(20) DEFAULT 'programmé', -- envoyé, échec, annulé
+    cible JSONB -- ex: { "classe_id": 12, "role": "parent" }
+);
+
+-- Journal des envois
+CREATE TABLE email_logs (
+    id SERIAL PRIMARY KEY,
+    destinataire_email VARCHAR(150),
+    sujet VARCHAR(200),
+    contenu TEXT,
+    date_envoi TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    statut_envoi VARCHAR(20), -- envoyé, erreur, en attente
+    erreur_message TEXT,
+    campaign_id INTEGER REFERENCES email_campaigns(id)
+);
+```
+
+---
+
+## 🖥️ Interface utilisateur prévue
+
+### Interfaces côté admin :
+
+* Gestion des modèles d’email
+* Lancement de campagnes
+* Visualisation des journaux
+* Test SMTP
+* Éditeur WYSIWYG pour les modèles
+
+### Interfaces côté utilisateurs :
+
+* Historique des communications reçues (parents/apprenants)
+* Option de désabonnement (email marketing)
+
+---
+
+## 🔐 Rôles et permissions
+
+| Rôle                      | Accès aux fonctionnalités                  |
+| ------------------------- | ------------------------------------------ |
+| Admin système             | Tous droits (création, envoi, config SMTP) |
+| Responsable administratif | Création + envoi des emails                |
+| Enseignant                | Envoi restreint à ses classes (si activé)  |
+| Parent/Élève              | Réception uniquement                       |
+
+---
+
+## 🔔 Extension future possible :
+
+* Notifications SMS couplées à l’email
+* Automatisation avec des **workflows** (ex: lors d’une absence de 3 jours → alerte parent)
+* Génération PDF en pièce jointe (bulletins, factures)
+
+---
+
+Voici la fiche **détaillée** pour le **Module 14 : Statistiques et Indicateurs de Performance** dans le système de gestion scolaire.
+
+---
+
+# 📊 Module 14 : Statistiques et Indicateurs de Performance
+
+---
+
+### 🎯 Objectif :
+
+Fournir à l’administration, aux enseignants et aux décideurs une **vue claire, mesurable et exploitable** de la performance globale des élèves, enseignants, classes, et départements sur des périodes définies.
+
+Permet des **analyses pédagogiques**, **financières**, **disciplinaires** et **administratives** grâce à des tableaux de bord dynamiques, des filtres avancés et des représentations graphiques.
+
+---
+
+## 1. 👩‍🎓 **Statistiques Académiques**
+
+### Par apprenant :
+
+* Moyenne générale par séquence / trimestre / année
+* Classement par niveau, par classe
+* Progression ou régression (courbes par période)
+* Historique des résultats (année par année)
+* Taux d’absences
+
+### Par classe :
+
+* Moyenne de la classe par matière
+* Répartition des notes (par intervalles)
+* Meilleurs / moins bons élèves
+* Classement interclasses
+* Taux de réussite aux examens
+
+### Par matière :
+
+* Moyenne générale par matière
+* Comparaison interclasses
+* Difficulté perçue (moyenne < 10/20)
+* Écart-type des notes
+
+---
+
+## 2. 👨‍🏫 **Statistiques sur les Enseignants**
+
+* Nombre de cours assurés / manqués
+* Ponctualité (via les présences)
+* Retards fréquents
+* Nombre d’élèves par enseignant
+* Évolution des moyennes des élèves par matière enseignée
+* Feedback des apprenants (si activé)
+
+---
+
+## 3. 💸 **Statistiques Financières**
+
+* Montants perçus par période
+* Taux de paiement par classe, par niveau, par cycle
+* Montants impayés / en retard
+* Ventilation par type de frais (scolarité, uniforme, transport, etc.)
+* Salaires versés par période
+* Répartition des dépenses
+
+---
+
+## 4. 🛑 **Statistiques de Discipline**
+
+* Nombre de sanctions par élève / par classe
+* Récurrence des incidents
+* Motifs les plus fréquents
+* Sanctions par enseignant / surveillant
+
+---
+
+## 5. 📦 **Statistiques sur la Bibliothèque / Stocks**
+
+* Livres les plus empruntés
+* Durée moyenne d’emprunt
+* Éléments en rupture ou faibles stocks
+* Matériels détériorés ou perdus
+
+---
+
+## 6. 🚌 **Statistiques de Transport**
+
+* Taux d’occupation par ligne
+* Retards constatés
+* Évolution des inscrits au transport
+* Coûts associés
+
+---
+
+## 7. 🧮 **Indicateurs clés de performance (KPI)**
+
+| KPI                             | Description                                   |
+| ------------------------------- | --------------------------------------------- |
+| Taux de réussite global         | % d’élèves ayant une moyenne ≥ 10/20          |
+| Moyenne par niveau / classe     | Indicateur de performance pédagogique         |
+| Taux d’assiduité                | Présences / Total jours                       |
+| Retard enseignant               | Nombre de retards sur période donnée          |
+| Solvabilité financière          | % de paiements effectués par rapport au prévu |
+| Satisfaction parent (optionnel) | Résultat d’enquêtes                           |
+| Progression individuelle        | Évolution de la moyenne d’un élève            |
+
+---
+
+## 8. 📈 Interfaces utilisateurs (Frontend)
+
+* **Tableaux de bord dynamiques** avec filtres par :
+
+  * Année scolaire
+  * Trimestre / Séquence
+  * Classe / Niveau / Cycle
+  * Enseignant
+  * Matière
+* Graphiques :
+
+  * Barres, courbes, camemberts
+* Export :
+
+  * PDF / Excel / CSV
+* Rapports imprimables automatiques
+
+---
+
+## 9. 🔐 Rôles et accès
+
+| Rôle                    | Accès                                   |
+| ----------------------- | --------------------------------------- |
+| Directeur / Proviseur   | Toutes les statistiques globales        |
+| Responsable pédagogique | Élèves, classes, matières, enseignants  |
+| Enseignant              | Statistiques de ses matières et classes |
+| Parent                  | Statistiques de ses enfants uniquement  |
+| Comptable               | Données financières uniquement          |
+
+---
+
+## 10. 🧱 Base de données – Extrait des tables associées
+
+```sql
+CREATE TABLE indicateurs_kpi (
+    id SERIAL PRIMARY KEY,
+    nom VARCHAR(150) NOT NULL,
+    description TEXT,
+    type VARCHAR(50), -- 'academique', 'financier', 'discipline', etc.
+    code_unique VARCHAR(50) UNIQUE, -- ex: 'TAUX_REUSSITE'
+    actif BOOLEAN DEFAULT TRUE,
+    date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE indicateur_valeurs (
+    id SERIAL PRIMARY KEY,
+    indicateur_id INTEGER REFERENCES indicateurs_kpi(id),
+    valeur NUMERIC,
+    periode VARCHAR(50), -- ex: "Trimestre 1 - 2025"
+    classe_id INTEGER,
+    niveau_id INTEGER,
+    enseignant_id INTEGER,
+    apprenant_id INTEGER,
+    date_calcul TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+---
+
+## 11. 🔄 Automatisation
+
+* Calcul programmé tous les soirs (ou sur demande)
+* Détection automatique des anomalies (ex: chute brutale de moyenne)
+* Alertes personnalisables (ex: si moyenne < 8 sur 2 séquences)
+
+---
+
+Voici la fiche **détaillée** pour le **Module 15 : Archivage, Sauvegarde et Conformité RGPD** du système de gestion scolaire.
+
+---
+
+# 🗄️ Module 15 : Archivage, Sauvegarde et Conformité RGPD
+
+---
+
+### 🎯 Objectif :
+
+Garantir la **sécurité, la pérennité, la conformité légale** et le **respect de la vie privée** des données personnelles traitées dans le système scolaire, en accord avec la réglementation RGPD (Règlement Général sur la Protection des Données) et les bonnes pratiques d’archivage.
+
+---
+
+## 1. 📁 Archivage des Données Académiques
+
+### Données archivées à la fin de chaque année scolaire :
+
+* Apprenants : données de passage de classe, réinscription
+* Bulletins, évaluations, moyennes
+* Présences et sanctions
+* Affectations enseignants / matières
+* Statistiques annuelles
+* Comptes financiers et paiements
+
+### Règles d’archivage :
+
+* **Lecture seule** après clôture de l’année
+* Non modifiables, mais consultables avec rôles autorisés
+* Restauration possible à des fins d'audit ou comparaisons
+
+### Table SQL type :
+
+```sql
+CREATE TABLE archives_annee_scolaire (
+    id SERIAL PRIMARY KEY,
+    annee VARCHAR(10) NOT NULL,
+    date_cloture TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    utilisateur_id INTEGER REFERENCES utilisateurs(id), -- qui a validé
+    commentaire TEXT,
+    statut VARCHAR(50) DEFAULT 'archivé'
+);
+```
+
+---
+
+## 2. 💾 Sauvegarde des données
+
+### Types de sauvegardes :
+
+* **Automatiques** : tous les jours à heure fixe
+* **Manuelles** : via interface admin
+* **Versionnées** : chaque backup est horodaté et versionné
+
+### Contenu :
+
+* Base de données complète
+* Fichiers téléversés (documents, photos, bulletins, etc.)
+* Logs et journaux critiques
+* Configuration système
+
+### Méthodes de sauvegarde :
+
+* Export PostgreSQL (dump SQL)
+* ZIP des répertoires de fichiers
+* Sauvegarde distante possible (Google Drive, AWS S3, FTP, etc.)
+
+### Interface utilisateur :
+
+* Liste des sauvegardes
+* Télécharger / Restaurer / Supprimer
+* État de la dernière sauvegarde (succès/échec)
+
+---
+
+## 3. 🛡️ Conformité RGPD et Protection des données
+
+### 3.1 Principes respectés :
+
+* **Consentement** : recueil du consentement des utilisateurs à la collecte de données
+* **Finalité** : les données sont utilisées exclusivement pour des finalités pédagogiques et administratives
+* **Minimisation** : seules les données nécessaires sont collectées
+* **Durée de conservation limitée** : selon la législation en vigueur
+
+### 3.2 Fonctionnalités RGPD intégrées :
+
+* Portail de **demande d'accès** à ses données personnelles
+* **Export des données personnelles** sur demande (PDF ou JSON)
+* **Suppression des données** (droit à l’oubli) avec vérification manuelle
+* **Gestion des consentements** des utilisateurs (parents, élèves, enseignants)
+* **Journalisation** des actions sensibles (consultation / modification de données personnelles)
+
+```sql
+CREATE TABLE rgpd_demandes (
+    id SERIAL PRIMARY KEY,
+    utilisateur_id INTEGER REFERENCES utilisateurs(id),
+    type_demande VARCHAR(50), -- 'export', 'suppression', etc.
+    statut VARCHAR(30) DEFAULT 'en attente',
+    date_demande TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    date_traitement TIMESTAMP,
+    admin_id INTEGER REFERENCES utilisateurs(id)
+);
+```
+
+---
+
+## 4. 📝 Journalisation (Logs & Audit)
+
+### Suivi :
+
+* Qui a modifié, consulté ou supprimé une donnée
+* Journal des connexions (IP, date/heure, type d’appareil)
+* Activité système (archivage, sauvegarde, restauration)
+
+### Stockage :
+
+* Logs structurés dans la base de données
+* Exportables pour audit externe
+* Rétention configurable (par défaut : 3 à 5 ans)
+
+```sql
+CREATE TABLE logs_audit (
+    id SERIAL PRIMARY KEY,
+    utilisateur_id INTEGER REFERENCES utilisateurs(id),
+    action TEXT,
+    cible TEXT,
+    date_action TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ip VARCHAR(45),
+    details TEXT
+);
+```
+
+---
+
+## 5. 🔐 Sécurité et chiffrement
+
+* Chiffrement des mots de passe (bcrypt, Argon2)
+* Chiffrement des sauvegardes sensibles
+* Stockage sécurisé des documents
+* Authentification forte (2FA possible)
+* Accès restreint aux sauvegardes et archives
+
+---
+
+## 6. 📤 Export et transfert sécurisé
+
+* Export de toutes les données au format PDF / CSV / SQL
+* Intégration avec outils d’audit externe
+* Archivage sur clé USB chiffrée ou serveurs sécurisés
+* Journalisation de tous les exports (qui, quand, quoi)
+
+---
+
+## 7. 🔄 Cycle de vie des données
+
+| Étape            | Description                                 |
+| ---------------- | ------------------------------------------- |
+| Collecte         | Via formulaires d’inscription ou interfaces |
+| Traitement       | Utilisation pédagogique et administrative   |
+| Archivage        | Automatique ou manuel après chaque session  |
+| Export / Demande | À tout moment par utilisateur via RGPD      |
+| Suppression      | Manuelle ou automatisée après X années      |
+
+---
+
+Voici la fiche complète et détaillée du **Module 16 : Sauvegarde hors-ligne et mobile** pour votre système de gestion scolaire.
+
+---
+
+# 📶 Module 16 : Sauvegarde Hors-ligne et Mobile
+
+---
+
+### 🎯 Objectif :
+
+Garantir la **continuité des services essentiels** même en cas de coupure de connexion internet ou d’instabilité réseau, particulièrement dans les zones rurales ou peu connectées, tout en permettant aux agents autorisés d’utiliser l’application sur des **appareils mobiles** (smartphones/tablettes) en mode **hors-ligne**, avec synchronisation automatique dès rétablissement du réseau.
+
+---
+
+## 1. 🛠️ Fonctionnalités Principales
+
+### 1.1 Mode hors-ligne (offline-first)
+
+* Consultation des données locales :
+
+  * Liste des élèves, emplois du temps, notes, présences, paiements récents
+* Saisie possible sans connexion :
+
+  * Présences, retards, évaluations, remarques disciplinaires, paiements, messages internes
+* Sauvegarde locale (via IndexedDB ou SQLite mobile)
+* Synchronisation en arrière-plan dès le retour de la connexion
+
+### 1.2 Synchronisation des données
+
+* Détection automatique de la connectivité
+* Queue des actions à synchroniser (ajouts/modifications)
+* Résolution des conflits (ex : modification simultanée en ligne et hors-ligne)
+* Journalisation des synchronisations réussies ou échouées
+
+---
+
+## 2. 📱 Compatibilité mobile
+
+### 2.1 Plateformes visées :
+
+* Android (100% pris en charge)
+* iOS (optionnel, selon priorité du projet)
+* Web Mobile Responsive (PWA – Progressive Web App)
+
+### 2.2 Modules disponibles en mobile :
+
+| Module                | Lecture | Écriture | Hors-ligne supporté  |
+| --------------------- | ------- | -------- | -------------------- |
+| Liste des élèves      | ✅       | ❌        | ✅                    |
+| Présences             | ✅       | ✅        | ✅                    |
+| Notes / Évaluations   | ✅       | ✅        | ✅                    |
+| Emploi du temps       | ✅       | ❌        | ✅                    |
+| Paiements             | ✅       | ✅        | ✅                    |
+| Messagerie interne    | ✅       | ✅        | ✅ (stockage différé) |
+| Documents / Bulletins | ✅       | ❌        | ✅ (PDF en cache)     |
+
+---
+
+## 3. 🧩 Architecture technique
+
+### 3.1 Technologies possibles
+
+* **PWA (Progressive Web App)** avec :
+
+  * React.js / Vue.js
+  * IndexedDB pour le stockage local
+  * Service Workers pour interception des requêtes
+* **Application mobile native** (si besoin) :
+
+  * React Native / Flutter
+  * SQLite pour la base de données embarquée
+  * Background Sync (avec AppSync ou custom API)
+
+### 3.2 Gestion des données locales :
+
+```plaintext
++---------------------+
+| LocalStorage        |
+| IndexedDB / SQLite  |
++---------------------+
+         ⇅
++----------------------+
+| Synchronisation API  |
+| /sync/batch          |
++----------------------+
+         ⇅
++------------------------+
+| Serveur principal (API)|
+| avec contrôle d'accès  |
++------------------------+
+```
+
+---
+
+## 4. 🔄 Exemples de scénarios
+
+### 4.1 Professeur en zone sans réseau :
+
+* Ouvre l’application mobile PWA
+* Enregistre les présences et les notes
+* Les données sont stockées localement
+* Le soir, une fois connecté au Wi-Fi, tout se synchronise automatiquement
+
+### 4.2 Agent de scolarité en tournée :
+
+* Utilise une tablette pour enregistrer les frais dans les villages
+* Les reçus sont générés hors-ligne (PDF)
+* Paiements stockés localement puis envoyés dès retour à l'école
+
+---
+
+## 5. 🔐 Sécurité
+
+* Données locales chiffrées (AES ou niveau SQLite/IndexedDB)
+* Authentification persistante avec expiration
+* Données synchronisées via HTTPS uniquement
+* Journalisation des opérations locales et distantes
+
+---
+
+## 6. 🧪 Suivi et Administration
+
+* Tableau de bord des synchronisations :
+
+  * Dernière date de sync
+  * Échecs et erreurs
+  * Volume de données échangé
+* Alertes en cas de données non synchronisées depuis X jours
+* Possibilité de forcer la resynchronisation d’un appareil
+
+---
+
+## 7. 📂 Extrait SQL / Modèle JSON local
+
+### Exemple : Queue de synchronisation locale
+
+```json
+{
+  "queue": [
+    {
+      "id": "local-12345",
+      "type": "presence",
+      "payload": {
+        "apprenant_id": 27,
+        "date": "2025-05-18",
+        "statut": "Absent",
+        "remarque": "Absence non justifiée"
+      },
+      "synced": false,
+      "timestamp": 1716039123
+    }
+  ]
+}
+```
+
+---
+
+## 8. 📊 Avantages
+
+* Résilience totale du système (connectivité non bloquante)
+* Amélioration de l’accès et de la mobilité
+* Meilleure adoption dans les zones rurales ou sans couverture stable
+* Réduction des pertes de données en cas d'incident réseau
+
+---
+
+Voici la fiche complète du **Module 17**, intégrant trois sous-modules cruciaux pour un système de gestion scolaire avancé : **Génération de certificats PDF**, **Gestion des anciens élèves**, et **Tableau de bord pédagogique**.
+
+---
+
+# 🧩 Module 17 : Génération de certificats PDF, gestion des anciens élèves et tableau de bord pédagogique
+
+---
+
+## 🔹 17.1 Génération de certificats PDF
+
+### 🎯 Objectif :
+
+Permettre l’émission automatique de **certificats officiels** (scolarité, réussite, inscription, transfert, attestation de notes…) au format **PDF sécurisé** avec personnalisation, traçabilité et signature numérique.
+
+### 🔧 Fonctionnalités principales :
+
+* Génération automatique à partir des données enregistrées
+* Modèles personnalisables par niveau ou type de document
+* Intégration des **logos, cachets, signatures, QR code de vérification**
+* Possibilité d’imprimer, télécharger ou envoyer par mail
+* Historique des certificats émis pour chaque élève
+
+### 📄 Types de certificats :
+
+* Attestation de scolarité
+* Attestation de réussite
+* Attestation de notes
+* Certificat de transfert
+* Attestation de présence
+* Relevé de notes simplifié
+
+### 🔐 Sécurité :
+
+* QR Code menant à une URL de vérification (ex : `/certificat/verify/:id`)
+* Signature numérique (clé publique de l’établissement)
+* Journal des émissions de documents
+
+### 🗃️ Tables principales :
+
+```sql
+CREATE TABLE certificats (
+  id SERIAL PRIMARY KEY,
+  apprenant_id INTEGER REFERENCES apprenants(id),
+  type_certificat VARCHAR(50),
+  contenu_json JSONB,
+  date_emission DATE DEFAULT CURRENT_DATE,
+  signature_pdf BOOLEAN DEFAULT FALSE,
+  qr_code_url TEXT,
+  emis_par INTEGER REFERENCES utilisateurs(id)
+);
+```
+
+---
+
+## 🔹 17.2 Gestion des anciens élèves
+
+### 🎯 Objectif :
+
+Assurer la **traçabilité et l’historique** des élèves après leur départ de l’établissement pour assurer le suivi administratif, les statistiques de performance ou des campagnes de communication (réseau des anciens, dons, etc.).
+
+### 🔧 Fonctionnalités principales :
+
+* Archivage automatique à la fin de l’année ou sur décision manuelle
+* Base de données distincte (statut "ancien élève")
+* Suivi de leurs parcours (si connu : université, entreprise)
+* Recontact possible (mail, téléphone, formulaire)
+* Export de données (PDF, Excel, CSV)
+* Filtrage par année de sortie, série, réussite, etc.
+
+### 📄 Détails conservés :
+
+* Parcours académique complet
+* Résultats obtenus
+* Certificats générés
+* Documents administratifs
+
+### 🗃️ Tables principales :
+
+```sql
+CREATE TABLE anciens_eleves (
+  id SERIAL PRIMARY KEY,
+  apprenant_id INTEGER UNIQUE REFERENCES apprenants(id),
+  annee_sortie INTEGER,
+  motif_sortie TEXT,
+  parcours_post_scolaire TEXT,
+  contact_email TEXT,
+  contact_tel TEXT,
+  recontacte BOOLEAN DEFAULT FALSE
+);
+```
+
+---
+
+## 🔹 17.3 Tableau de bord pédagogique
+
+### 🎯 Objectif :
+
+Fournir une **vue synthétique et visuelle** de la performance pédagogique par classe, enseignant, matière, niveau ou période, pour permettre des prises de décision éclairées par la direction ou les coordinateurs pédagogiques.
+
+### 🔧 Fonctionnalités principales :
+
+* Visualisation :
+
+  * Moyennes par classe, matière, enseignant, trimestre
+  * Répartition des notes par intervalle (0-5, 6-10, etc.)
+  * Nombre d’élèves ayant échoué/réussi
+* Suivi :
+
+  * Taux d’assiduité
+  * Évolution des notes par période
+  * Comparaison inter-trimestre
+* Indicateurs clés :
+
+  * Moyenne générale par niveau
+  * Meilleures/mauvaises matières
+  * Classe la plus performante
+  * Évolution par année scolaire
+* Exports PDF/Excel
+
+### 📊 Visualisations :
+
+* Graphiques linéaires (évolution)
+* Diagrammes en barres ou circulaires (répartition)
+* Tableaux dynamiques filtrables
+
+### 🗃️ Tables utilisées :
+
+* `evaluations`, `notes`, `bulletins`, `classes`, `enseignants`, `presences`, `matières`
+
+### 📌 Exemple d’indicateurs :
+
+| Indicateur                     | Exemple                 |
+| ------------------------------ | ----------------------- |
+| Moyenne générale 1er Trimestre | 12,45/20                |
+| Taux d’assiduité 2e Trimestre  | 93,2%                   |
+| Matière la plus réussie        | Mathématiques (15,3/20) |
+| Élève le plus performant       | Tchamga Steve (17,9/20) |
+| Classe la plus performante     | Terminale D             |
+
+---
+
+## 🔐 Sécurité et Permissions :
+
+* Seuls les administrateurs, chefs d’établissement et coordinateurs pédagogiques peuvent accéder à tout le module
+* Les enseignants voient uniquement leurs données et indicateurs
+* Signature obligatoire avant toute émission de certificat
+
+---
+
+Parfait, poursuivons avec le **Module 18** en deux volets complémentaires :
+
+---
+
+# 🧩 Module 18 : Remplacement automatique des enseignants absents et génération de documents administratifs dynamiques
+
+---
+
+## 🔹 18.1 Remplacement automatique des enseignants absents
+
+### 🎯 Objectif :
+
+Permettre à l’administration de **gérer efficacement les absences des enseignants** en proposant automatiquement des remplaçants disponibles selon l’emploi du temps, la matière et les niveaux d’enseignement.
+
+---
+
+### 🔧 Fonctionnalités principales :
+
+#### ✅ Déclaration d’absence :
+
+* Interface pour signaler une absence ponctuelle ou prolongée
+* Possibilité d’ajouter un justificatif (pièce jointe)
+* Validation par un responsable pédagogique
+
+#### 🔄 Recherche automatique de remplaçant :
+
+* Détection des enseignants libres à la même période
+* Filtrage par :
+
+  * Matière compatible
+  * Disponibilité dans l’emploi du temps
+  * Niveau d’habilitation (mêmes classes ou équivalent)
+* Proposition automatique de remplaçants
+
+#### 📝 Validation et affectation :
+
+* Liste des propositions classée par pertinence
+* Affectation manuelle ou automatique
+* Notification immédiate du remplaçant par messagerie/email
+
+#### 🕓 Historique des remplacements :
+
+* Suivi de tous les remplacements effectués
+* Rapports mensuels ou annuels
+
+---
+
+### 🗃️ Structure SQL principale :
+
+```sql
+CREATE TABLE absences_enseignants (
+  id SERIAL PRIMARY KEY,
+  enseignant_id INTEGER REFERENCES enseignants(id),
+  date_absence DATE,
+  heure_debut TIME,
+  heure_fin TIME,
+  motif TEXT,
+  justificatif TEXT,
+  valide BOOLEAN DEFAULT FALSE,
+  cree_par INTEGER REFERENCES utilisateurs(id),
+  date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE remplacements (
+  id SERIAL PRIMARY KEY,
+  absence_id INTEGER REFERENCES absences_enseignants(id),
+  remplaçant_id INTEGER REFERENCES enseignants(id),
+  valide BOOLEAN DEFAULT FALSE,
+  cree_par INTEGER REFERENCES utilisateurs(id),
+  date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+---
+
+## 🔹 18.2 Génération de documents administratifs dynamiques
+
+### 🎯 Objectif :
+
+Offrir une interface d’administration permettant de **générer des documents officiels dynamiques** (PDF) basés sur des modèles avec insertion automatique de données (élève, enseignant, période, classe…).
+
+---
+
+### 🔧 Fonctionnalités principales :
+
+#### 🧩 Types de documents pris en charge :
+
+* Demande d’inscription
+* Demande de congé enseignant
+* Convention parentale
+* Rapport d’incident
+* Fiche d’engagement
+* PV de conseil de classe
+* Attestations internes
+
+#### ✏️ Création de modèles dynamiques :
+
+* Utilisation de balises dynamiques (`{{nom}}`, `{{classe}}`, `{{date_naissance}}`)
+* Editeur visuel WYSIWYG
+* Gestion multi-langue
+
+#### 📤 Utilisation :
+
+* Sélection du type de document
+* Pré-remplissage automatique via ID (apprenant, enseignant…)
+* Téléchargement, impression ou envoi par email
+
+#### 📦 Historique :
+
+* Liste de tous les documents générés
+* Archivage automatique dans le dossier de l’utilisateur (élève/enseignant)
+
+---
+
+### 🗃️ Structure SQL principale :
+
+```sql
+CREATE TABLE modeles_documents (
+  id SERIAL PRIMARY KEY,
+  nom_modele VARCHAR(100),
+  contenu_html TEXT,
+  type_modele VARCHAR(50), -- ex: "Inscription", "Attestation", ...
+  langue VARCHAR(10),
+  cree_par INTEGER REFERENCES utilisateurs(id),
+  date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE documents_generes (
+  id SERIAL PRIMARY KEY,
+  modele_id INTEGER REFERENCES modeles_documents(id),
+  cible_type VARCHAR(20), -- "apprenant", "enseignant", etc.
+  cible_id INTEGER,
+  contenu_final TEXT,
+  fichier_pdf TEXT,
+  date_generation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  genere_par INTEGER REFERENCES utilisateurs(id)
+);
+```
+
+---
+
+### 🔐 Sécurité et permissions :
+
+* Droits modulables par rôle (ex : seuls les responsables peuvent créer des modèles)
+* Historique de génération consultable uniquement par utilisateurs autorisés
+* Signature numérique optionnelle et QR code de vérification
+
+---
+
+Voici le **Module 19 : Suivi psychopédagogique des élèves**, détaillé pas à pas pour une mise en œuvre directe par un développeur.
+
+---
+
+# 🧠 Module 19 : Suivi psychopédagogique des élèves
+
+---
+
+## 🎯 Objectif général :
+
+Offrir un espace sécurisé et confidentiel pour le **suivi psychologique, pédagogique et comportemental** des élèves, permettant aux encadreurs (psychologues scolaires, éducateurs, conseillers d’orientation, surveillants) de consigner des observations, proposer des actions correctives, assurer un accompagnement individualisé, et suivre l’évolution globale de chaque apprenant.
+
+---
+
+## 🔧 Fonctionnalités détaillées :
+
+### 1. **Création de profils de suivi psychopédagogique**
+
+* Chaque élève possède un profil de suivi consultable uniquement par les personnels autorisés (psychologues, surveillants, enseignants, administration).
+* Affichage :
+
+  * Informations de base de l’élève
+  * Historique des interventions
+  * Synthèse des besoins éducatifs particuliers
+  * Recommandations en cours
+
+### 2. **Observations psychopédagogiques**
+
+* Possibilité d’enregistrer des observations ponctuelles ou régulières sur :
+
+  * État émotionnel ou psychologique
+  * Comportement social
+  * Attitudes en classe
+  * Troubles d’apprentissage suspectés
+* Observations associées à une date, à un auteur, et à une catégorie.
+
+### 3. **Plans d’accompagnement individualisé (PAI)**
+
+* Possibilité de créer un **plan d’accompagnement** avec :
+
+  * Objectifs spécifiques
+  * Actions prévues (accompagnement, tutorat, soutien psychologique, aide méthodologique)
+  * Durée et échéances
+  * Intervenants désignés
+
+### 4. **Rendez-vous de suivi**
+
+* Prise de rendez-vous entre les élèves, leurs parents et les professionnels :
+
+  * Notifications envoyées
+  * Historique des séances
+  * Compte rendu joint à chaque séance
+
+### 5. **Fiches d’incidents & interventions disciplinaires**
+
+* Intégration des incidents disciplinaires graves nécessitant une observation psychopédagogique.
+* Possibilité de lier l’incident à une recommandation psychopédagogique.
+
+### 6. **Confidentialité et droits d’accès**
+
+* Visibilité réservée aux personnels habilités :
+
+  * Conseillers d’orientation
+  * Psychologues
+  * Responsables pédagogiques
+  * Chef d’établissement
+* Historique des consultations
+
+---
+
+## 📘 Exemples d’usage :
+
+* Élève montrant des signes de décrochage → création d’un PAI avec un plan de soutien + suivi hebdomadaire.
+* Élève ayant un trouble de comportement en classe → observation + fiche incident + réunion avec parents.
+
+---
+
+## 🗃️ Structure SQL proposée :
+
+```sql
+CREATE TABLE suivis_psychopedagogiques (
+  id SERIAL PRIMARY KEY,
+  apprenant_id INTEGER REFERENCES apprenants(id),
+  date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  auteur_id INTEGER REFERENCES utilisateurs(id),
+  titre VARCHAR(255),
+  commentaire TEXT,
+  type_suivi VARCHAR(50), -- "Observation", "Incident", "Entretien", "PAI", etc.
+  visible_par TEXT[] -- liste des rôles autorisés : ex ['psychologue', 'responsable', 'enseignant']
+);
+
+CREATE TABLE plans_accompagnement (
+  id SERIAL PRIMARY KEY,
+  apprenant_id INTEGER REFERENCES apprenants(id),
+  date_debut DATE,
+  date_fin DATE,
+  objectifs TEXT,
+  actions_prevues TEXT,
+  intervenants TEXT,
+  cree_par INTEGER REFERENCES utilisateurs(id),
+  date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE rdv_psychopedagogiques (
+  id SERIAL PRIMARY KEY,
+  apprenant_id INTEGER REFERENCES apprenants(id),
+  intervenant_id INTEGER REFERENCES utilisateurs(id),
+  date_rdv TIMESTAMP,
+  lieu VARCHAR(100),
+  compte_rendu TEXT,
+  statut VARCHAR(30) DEFAULT 'prévu', -- prévu / terminé / annulé
+  date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE incidents_comportementaux (
+  id SERIAL PRIMARY KEY,
+  apprenant_id INTEGER REFERENCES apprenants(id),
+  date_incident DATE,
+  type_incident VARCHAR(100),
+  description TEXT,
+  mesures_prises TEXT,
+  lie_a_suivi BOOLEAN DEFAULT FALSE,
+  auteur_id INTEGER REFERENCES utilisateurs(id),
+  date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+---
+
+## 🔐 Sécurité :
+
+* **Accès par rôle dynamique** : seules les personnes habilitées peuvent consulter ou ajouter des données.
+* Toutes les données sont **historisées et signées** numériquement.
+* RGPD respecté : consentement parental requis pour certains types de suivis.
+
+---
+
+## 📊 Statistiques (optionnel) :
+
+* Nombre d’élèves suivis
+* Répartition par type de troubles ou besoins
+* Évolution des suivis dans le temps
+* Taux de réussite des plans d’accompagnement
+
+---
+
+Voici la définition détaillée du **Module 20 : Événements scolaires et réunions**, prêt à être compris et utilisé par un développeur pour l’implémentation du système.
+
+---
+
+# 📅 Module 20 : Événements scolaires et réunions
+
+---
+
+## 🎯 Objectif général :
+
+Permettre à l’établissement de planifier, gérer et suivre les **événements scolaires** (cérémonies, excursions, journées portes ouvertes…) ainsi que les **réunions pédagogiques ou administratives**, avec notifications, gestion des présences, documents liés et suivi des décisions.
+
+---
+
+## 🔧 Fonctionnalités détaillées :
+
+### 1. **Création et planification des événements**
+
+* Types d’événements :
+
+  * **Événements scolaires** : fêtes, compétitions, sorties éducatives, campagnes de sensibilisation, remises de prix…
+  * **Réunions** : conseils de classe, réunions de parents, réunions pédagogiques, assemblées générales.
+* Données à renseigner :
+
+  * Titre de l’événement
+  * Type d’événement
+  * Date et heure de début / de fin
+  * Lieu
+  * Description
+  * Participants ciblés (tous, enseignants, parents, classes spécifiques, personnels, etc.)
+  * Documents associés (ordre du jour, invitations…)
+
+### 2. **Système d'invitation et notifications**
+
+* Envoi automatique d’invitations (email, notification interne, SMS selon configuration)
+* Confirmation de participation (pour les réunions)
+* Rappels automatisés à l’approche de l’événement
+
+### 3. **Suivi des présences**
+
+* Liste des participants
+* Enregistrement de la **présence / absence** (manuellement ou via QR code)
+* Motif d’absence s’il y a lieu
+
+### 4. **Comptes rendus et décisions**
+
+* Après la réunion :
+
+  * Saisie ou importation d’un **compte rendu**
+  * Enregistrement des **résolutions prises**, assignation à des responsables
+  * Suivi des actions décidées dans les réunions (état : en attente, en cours, terminé)
+
+### 5. **Affichage public (optionnel)**
+
+* Calendrier interactif ou fil des événements visibles :
+
+  * Sur le portail web de l’établissement
+  * Par classe ou rôle (parents, élèves, enseignants, etc.)
+
+---
+
+## 📘 Exemple d’usage :
+
+* Le directeur planifie la **réunion de rentrée des parents**.
+* Les parents reçoivent un SMS et une notification interne.
+* Le jour J, les présences sont enregistrées.
+* Un **compte rendu PDF** est ajouté, avec une résolution assignée à l’administration pour imprimer les carnets de liaison.
+
+---
+
+## 🗃️ Structure SQL proposée :
+
+```sql
+CREATE TABLE evenements (
+  id SERIAL PRIMARY KEY,
+  titre VARCHAR(255),
+  type_evenement VARCHAR(100), -- Ex: "Réunion", "Sortie", "Cérémonie", "Compétition"
+  description TEXT,
+  date_debut TIMESTAMP,
+  date_fin TIMESTAMP,
+  lieu VARCHAR(255),
+  cible_participation TEXT, -- ex: "tous", "parents", "enseignants", "classe:4eA"
+  document_joint VARCHAR(255), -- lien vers fichier PDF, ordre du jour, etc.
+  cree_par INTEGER REFERENCES utilisateurs(id),
+  date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE participants_evenement (
+  id SERIAL PRIMARY KEY,
+  evenement_id INTEGER REFERENCES evenements(id),
+  utilisateur_id INTEGER REFERENCES utilisateurs(id),
+  statut_participation VARCHAR(30) DEFAULT 'non confirmé', -- confirmé / annulé / non confirmé
+  presence BOOLEAN DEFAULT FALSE,
+  motif_absence TEXT
+);
+
+CREATE TABLE comptes_rendus_evenement (
+  id SERIAL PRIMARY KEY,
+  evenement_id INTEGER REFERENCES evenements(id),
+  auteur_id INTEGER REFERENCES utilisateurs(id),
+  compte_rendu TEXT,
+  document_pdf VARCHAR(255),
+  date_soumission TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE decisions_evenement (
+  id SERIAL PRIMARY KEY,
+  evenement_id INTEGER REFERENCES evenements(id),
+  description TEXT,
+  responsable_id INTEGER REFERENCES utilisateurs(id),
+  etat VARCHAR(30) DEFAULT 'en attente', -- en attente / en cours / terminé
+  date_echeance DATE
+);
+```
+
+---
+
+## 🔐 Sécurité :
+
+* Création / édition réservée aux rôles autorisés (administrateurs, chefs d’établissement, coordinateurs)
+* Lecture des événements filtrée selon le rôle et la classe de l’utilisateur
+* Tous les documents liés sont stockés de manière sécurisée et journalisée
+
+---
+
+## 📊 Statistiques :
+
+* Taux de participation par type d’événement
+* Répartition des absences par classe ou rôle
+* Nombre de décisions prises et suivies
+
+---
+
+## 📲 Intégrations :
+
+* **Calendrier global** de l’établissement
+* **Système de messagerie et notification**
+* **Portail parent/élève/enseignant** pour consulter les événements
+
+---
+
+Parfait. Voici une **spécification détaillée du Module 21 : e-Learning**, entièrement conçu pour être implémenté par des développeurs avec clarté, en cohérence avec les autres modules de votre système de gestion scolaire.
+
+---
+
+# 🎓 Module 21 : e-Learning (cours en ligne, devoirs, supports, quiz)
+
+---
+
+## 🎯 Objectif général :
+
+Permettre aux enseignants de publier du contenu pédagogique en ligne et aux élèves d’y accéder, de soumettre des devoirs, passer des quiz, et suivre leur progression. Ce module renforce l’apprentissage hybride ou 100% à distance.
+
+---
+
+## 🔧 Fonctionnalités détaillées :
+
+### 1. **Espace de cours en ligne par matière**
+
+* Création de **contenus pédagogiques** par les enseignants :
+
+  * Titres, descriptions
+  * Supports : PDF, vidéo, audio, PowerPoint, liens externes
+  * Téléchargement de fichiers
+  * Ajout de **tags / mots-clés**
+* Organisation par matière, classe et semaine
+* Suivi des accès des élèves (consultation, téléchargement)
+
+### 2. **Devoirs / Travaux dirigés**
+
+* Création de devoirs :
+
+  * Énoncé, description
+  * Fichiers joints (exercices, consignes…)
+  * Date limite de soumission
+* Envoi de notifications automatiques aux élèves
+* Soumission de devoirs :
+
+  * Téléversement de fichiers par les élèves (PDF, Word, images, ZIP…)
+  * Texte libre (éditeur WYSIWYG)
+* Correction :
+
+  * Note attribuée
+  * Commentaire du correcteur
+  * Possibilité de renvoyer un devoir (optionnelle)
+
+### 3. **Quiz / QCM**
+
+* Création de quiz par les enseignants :
+
+  * Questions à choix multiples (QCM)
+  * Réponses à texte libre (optionnel)
+  * Durée limite, nombre de tentatives
+* Paramètres :
+
+  * Aléatoire ou non
+  * Visible pour une période donnée
+  * Résultat affiché automatiquement ou après validation
+* Résultats et feedbacks visibles par l’élève
+* Tableau de bord de performance
+
+### 4. **Progression de l’élève**
+
+* Suivi individuel :
+
+  * Nombre de supports consultés
+  * Devoirs soumis / corrigés
+  * Quiz passés / scores
+* Visualisation sous forme de tableau ou graphe pour enseignants, élèves et parents
+
+---
+
+## 📘 Cas d’usage :
+
+1. **Un enseignant de SVT crée un cours avec une vidéo et un PDF** sur le cycle de reproduction des plantes.
+2. Il programme un **devoir** à remettre sous 7 jours.
+3. Les élèves reçoivent une **notification**.
+4. Chaque élève soumet un **fichier Word** avec ses réponses.
+5. L’enseignant corrige les devoirs et attribue une note + feedback.
+6. Un **quiz** est publié pour valider les acquis.
+7. Les parents et les élèves peuvent consulter la **progression** depuis leur espace.
+
+---
+
+## 🗃️ Structure SQL proposée :
+
+```sql
+CREATE TABLE cours_en_ligne (
+  id SERIAL PRIMARY KEY,
+  titre VARCHAR(255),
+  description TEXT,
+  classe_id INTEGER REFERENCES classes(id),
+  matiere_id INTEGER REFERENCES matieres(id),
+  enseignant_id INTEGER REFERENCES utilisateurs(id),
+  date_publication TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE supports_cours (
+  id SERIAL PRIMARY KEY,
+  cours_id INTEGER REFERENCES cours_en_ligne(id),
+  type_support VARCHAR(50), -- 'pdf', 'video', 'lien', 'audio', etc.
+  titre VARCHAR(255),
+  url_fichier TEXT,
+  ordre_affichage INTEGER
+);
+
+CREATE TABLE devoirs (
+  id SERIAL PRIMARY KEY,
+  cours_id INTEGER REFERENCES cours_en_ligne(id),
+  titre VARCHAR(255),
+  instructions TEXT,
+  date_limite TIMESTAMP,
+  fichier_joint VARCHAR(255)
+);
+
+CREATE TABLE soumissions_devoirs (
+  id SERIAL PRIMARY KEY,
+  devoir_id INTEGER REFERENCES devoirs(id),
+  apprenant_id INTEGER REFERENCES apprenants(id),
+  fichier_soumis VARCHAR(255),
+  commentaire_apprenant TEXT,
+  date_soumission TIMESTAMP,
+  note NUMERIC(5,2),
+  commentaire_correction TEXT
+);
+
+CREATE TABLE quiz (
+  id SERIAL PRIMARY KEY,
+  cours_id INTEGER REFERENCES cours_en_ligne(id),
+  titre VARCHAR(255),
+  description TEXT,
+  duree_minutes INTEGER,
+  visible_de TIMESTAMP,
+  visible_jusquau TIMESTAMP,
+  tentative_max INTEGER
+);
+
+CREATE TABLE questions (
+  id SERIAL PRIMARY KEY,
+  quiz_id INTEGER REFERENCES quiz(id),
+  type_question VARCHAR(50), -- 'qcm', 'texte'
+  question TEXT,
+  bonne_reponse TEXT,
+  choix_1 TEXT,
+  choix_2 TEXT,
+  choix_3 TEXT,
+  choix_4 TEXT
+);
+
+CREATE TABLE reponses_quiz (
+  id SERIAL PRIMARY KEY,
+  quiz_id INTEGER REFERENCES quiz(id),
+  question_id INTEGER REFERENCES questions(id),
+  apprenant_id INTEGER REFERENCES apprenants(id),
+  reponse TEXT,
+  est_correct BOOLEAN,
+  date_reponse TIMESTAMP
+);
+```
+
+---
+
+## 📲 Interfaces prévues :
+
+* **Espace enseignant** :
+
+  * Créer / publier cours
+  * Ajouter supports / devoirs / quiz
+  * Corriger et commenter
+* **Espace apprenant** :
+
+  * Visualiser contenu par classe/matière
+  * Soumettre devoirs / passer quiz
+  * Suivre progression
+* **Espace parent** :
+
+  * Consulter progression globale
+
+---
+
+## 📊 Statistiques :
+
+* Taux de complétion des cours
+* Moyenne des notes par matière
+* Participation par élève / classe
+* Temps passé sur chaque ressource
+
+---
+
+## 🔐 Sécurité :
+
+* Accès sécurisé selon les rôles
+* Fichiers chiffrés / protégés
+* Vérification des dates limites, tentatives
+* Journaux d’activités (logs)
+
+---
+
+Très bien. Voici la **spécification complète et détaillée du Module 22 : Gestion des clubs scolaires, cantine, internat et projets pédagogiques**, avec une structure exploitable directement par les développeurs (base de données, logique métier, cas d’usage, rôles, sécurité).
+
+---
+
+# 🎓 Module 22 : Gestion des clubs scolaires, cantine, internat et projets pédagogiques
+
+---
+
+## 🎯 Objectif général :
+
+Mettre en place un ensemble de sous-systèmes complémentaires facilitant la vie scolaire au-delà des cours académiques : gestion des clubs (sports, culture…), de la cantine, de l’internat, et des projets pédagogiques ou parascolaires.
+
+---
+
+## 🧩 Sous-modules
+
+---
+
+### **1. Gestion des clubs scolaires**
+
+#### 📌 Fonctionnalités :
+
+* Création de clubs (nom, type, description)
+* Attribution d’un encadreur ou référent (enseignant ou personnel)
+* Inscription des élèves
+* Planification d’activités ou d’événements
+* Suivi de la participation des membres
+* Archivage annuel des activités
+
+#### 🎯 Cas d’usage :
+
+* Le club de théâtre crée un spectacle en fin de trimestre.
+* L’élève se connecte, consulte les clubs disponibles, s’inscrit.
+* L’encadreur valide et gère la liste des membres.
+
+#### 📄 Tables SQL :
+
+```sql
+CREATE TABLE clubs (
+  id SERIAL PRIMARY KEY,
+  nom VARCHAR(100),
+  type_club VARCHAR(100), -- Sport, Art, Culture, Environnement, etc.
+  description TEXT,
+  encadreur_id INTEGER REFERENCES utilisateurs(id),
+  date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE membres_clubs (
+  id SERIAL PRIMARY KEY,
+  club_id INTEGER REFERENCES clubs(id),
+  apprenant_id INTEGER REFERENCES apprenants(id),
+  date_inscription TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  actif BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE activites_club (
+  id SERIAL PRIMARY KEY,
+  club_id INTEGER REFERENCES clubs(id),
+  titre VARCHAR(255),
+  description TEXT,
+  date_activite DATE
+);
+```
+
+---
+
+### **2. Gestion de la cantine**
+
+#### 📌 Fonctionnalités :
+
+* Définir des **menus par jour / semaine**
+* Gestion des inscriptions à la cantine (par trimestre ou mensuellement)
+* Paiement des frais de cantine
+* Suivi de la fréquentation quotidienne
+* Gestion des régimes spéciaux (allergies, menus halal, etc.)
+
+#### 🎯 Cas d’usage :
+
+* L’élève ou son parent s’inscrit à la cantine pour la période de janvier à mars.
+* Le chef cuisinier publie les menus de la semaine.
+* L’agent enregistre la présence à la cantine chaque midi.
+
+#### 📄 Tables SQL :
+
+```sql
+CREATE TABLE cantine_inscriptions (
+  id SERIAL PRIMARY KEY,
+  apprenant_id INTEGER REFERENCES apprenants(id),
+  periode VARCHAR(100), -- exemple : "Trimestre 1 2025"
+  date_inscription DATE,
+  paye BOOLEAN DEFAULT FALSE
+);
+
+CREATE TABLE cantine_menus (
+  id SERIAL PRIMARY KEY,
+  date_service DATE,
+  plat_principal VARCHAR(255),
+  accompagnement VARCHAR(255),
+  dessert VARCHAR(255),
+  boisson VARCHAR(255),
+  remarque TEXT
+);
+
+CREATE TABLE cantine_presence (
+  id SERIAL PRIMARY KEY,
+  apprenant_id INTEGER REFERENCES apprenants(id),
+  date DATE,
+  present BOOLEAN
+);
+```
+
+---
+
+### **3. Gestion de l’internat**
+
+#### 📌 Fonctionnalités :
+
+* Enregistrement des internes (élèves hébergés)
+* Attribution des chambres / lits
+* Suivi des absences / retards / permissions de sortie
+* Gestion des frais d’internat
+* Suivi des réparations ou incidents dans les dortoirs
+
+#### 🎯 Cas d’usage :
+
+* Un élève est assigné à la chambre 204, lit 3.
+* Il demande une sortie temporaire pour le weekend.
+* Le responsable valide et enregistre son retour.
+
+#### 📄 Tables SQL :
+
+```sql
+CREATE TABLE dortoirs (
+  id SERIAL PRIMARY KEY,
+  nom VARCHAR(100),
+  genre VARCHAR(10), -- Masculin, Féminin
+  capacite INTEGER
+);
+
+CREATE TABLE lits (
+  id SERIAL PRIMARY KEY,
+  dortoir_id INTEGER REFERENCES dortoirs(id),
+  numero_lit INTEGER,
+  disponible BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE internes (
+  id SERIAL PRIMARY KEY,
+  apprenant_id INTEGER REFERENCES apprenants(id),
+  lit_id INTEGER REFERENCES lits(id),
+  date_entree DATE,
+  date_sortie_prevue DATE,
+  remarque TEXT
+);
+
+CREATE TABLE permissions_sortie (
+  id SERIAL PRIMARY KEY,
+  interne_id INTEGER REFERENCES internes(id),
+  date_sortie DATE,
+  date_retour_prevue DATE,
+  date_retour_reelle DATE,
+  motif TEXT,
+  valide BOOLEAN DEFAULT FALSE
+);
+```
+
+---
+
+### **4. Projets pédagogiques / projets de classe**
+
+#### 📌 Fonctionnalités :
+
+* Création de projets par les enseignants ou encadreurs
+* Association à une classe, un niveau ou une matière
+* Suivi des livrables, échéances, participants
+* Suivi budgétaire (si applicable)
+* Rapport de projet et archivage
+
+#### 🎯 Cas d’usage :
+
+* Une classe terminale monte un projet sur l’agriculture bio.
+* L’enseignant encadrant suit l’avancement et valide les étapes.
+
+#### 📄 Tables SQL :
+
+```sql
+CREATE TABLE projets_pedagogiques (
+  id SERIAL PRIMARY KEY,
+  titre VARCHAR(255),
+  description TEXT,
+  classe_id INTEGER REFERENCES classes(id),
+  enseignant_id INTEGER REFERENCES utilisateurs(id),
+  date_debut DATE,
+  date_fin_prevue DATE,
+  budget_estime NUMERIC(10,2)
+);
+
+CREATE TABLE participants_projet (
+  id SERIAL PRIMARY KEY,
+  projet_id INTEGER REFERENCES projets_pedagogiques(id),
+  apprenant_id INTEGER REFERENCES apprenants(id),
+  role_participant VARCHAR(100) -- coordinateur, membre, rapporteur…
+);
+
+CREATE TABLE livrables_projet (
+  id SERIAL PRIMARY KEY,
+  projet_id INTEGER REFERENCES projets_pedagogiques(id),
+  titre VARCHAR(255),
+  date_echeance DATE,
+  statut VARCHAR(50), -- En cours, terminé, en retard
+  fichier_joint VARCHAR(255)
+);
+```
+
+---
+
+## 👥 Rôles et autorisations
+
+| Rôle                   | Accès clubs                  | Cantine                           | Internat       | Projets pédagogiques |
+| ---------------------- | ---------------------------- | --------------------------------- | -------------- | -------------------- |
+| Administrateur général | ✅ Complet                    | ✅ Complet                         | ✅ Complet      | ✅ Complet            |
+| Responsable cantine    | ❌                            | ✅ Complet                         | ❌              | ❌                    |
+| Surveillant internat   | ❌                            | ❌                                 | ✅ Complet      | ❌                    |
+| Enseignant encadrant   | ✅ Gère ses clubs             | ❌                                 | ❌              | ✅ Gère ses projets   |
+| Parent / Élève         | ✅ Consultation + inscription | ✅ Consultation menus, inscription | ✅ Consultation | ✅ Visualisation      |
+
+---
+
+## 🔐 Sécurité & journaux :
+
+* Journalisation de toutes les inscriptions / désinscriptions
+* Signature électronique pour les permissions de sortie
+* Export PDF des menus, fiches projets, rapports clubs
+* Notifications (email/app) pour échéances de projets ou repas spéciaux
+
+---
+
+Très bien, voici la **spécification complète du Module 23 : RGPD et journal d’audit pédagogique**, intégrant la conformité réglementaire (notamment RGPD) et la traçabilité pédagogique, avec des **tables SQL**, des **cas d’usage**, une **logique métier claire** et des **rôles**.
+
+---
+
+# 📘 Module 23 : RGPD et journal d’audit pédagogique
+
+---
+
+## 🎯 Objectifs
+
+1. **Assurer la conformité avec le RGPD** (Règlement Général sur la Protection des Données) : traitement, consentement, droit à l'oubli, minimisation.
+2. **Mettre en place une traçabilité pédagogique** : qui a modifié quoi, quand, et sur quelle donnée.
+3. **Fournir des outils d’audit internes et externes** sur les données sensibles, les évaluations, les présences, et plus.
+
+---
+
+## 🛡️ 1. **Conformité RGPD**
+
+### 🔍 Principes appliqués :
+
+* Minimisation des données (on ne stocke que ce qui est nécessaire)
+* Consentement explicite des utilisateurs (parents, élèves, employés)
+* Droit d’accès, de rectification, d’export, et d’effacement
+* Périmètre des données sensibles : santé, religion, identité, photo, statut social, etc.
+
+### 📌 Fonctionnalités :
+
+* Journal des consentements (signature électronique, opt-in/opt-out)
+* Interface de demande d’accès ou suppression des données personnelles
+* Masquage ou anonymisation des anciens élèves après archivage
+* Génération de rapport RGPD à destination des autorités
+
+### 🗃️ Tables SQL :
+
+```sql
+CREATE TABLE rgpd_consentements (
+  id SERIAL PRIMARY KEY,
+  utilisateur_id INTEGER REFERENCES utilisateurs(id),
+  type_consentement VARCHAR(100), -- "stockage_photo", "notifications", etc.
+  donne_consentement BOOLEAN,
+  date_consentement TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  ip_address VARCHAR(45)
+);
+
+CREATE TABLE rgpd_demandes (
+  id SERIAL PRIMARY KEY,
+  utilisateur_id INTEGER REFERENCES utilisateurs(id),
+  type_demande VARCHAR(100), -- "acces", "rectification", "effacement", "export"
+  statut VARCHAR(50) DEFAULT 'En attente', -- Traitée, Rejetée
+  commentaire TEXT,
+  date_demande TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  date_traitement TIMESTAMP
+);
+```
+
+---
+
+## 📋 2. Journal d’audit pédagogique
+
+### 📌 Fonctionnalités :
+
+* Enregistrer toutes les actions sensibles (ajout de note, changement de présence, mise à jour d’un bulletin, modification de données financières, etc.)
+* Suivi des connexions / déconnexions / accès à certaines données sensibles
+* Suivi des enseignants dans leurs évaluations
+* Export PDF ou CSV des logs à tout moment
+
+### 🎯 Cas d’usage :
+
+* Un administrateur veut savoir **qui a modifié la note de l’élève X** en mathématiques.
+* Le directeur vérifie **la régularité d’un enseignant** dans la correction des devoirs.
+* L’établissement prouve aux parents **qu’aucune donnée personnelle n’a été modifiée sans trace.**
+
+### 🗃️ Tables SQL :
+
+```sql
+CREATE TABLE journal_audit (
+  id SERIAL PRIMARY KEY,
+  utilisateur_id INTEGER REFERENCES utilisateurs(id),
+  action VARCHAR(255), -- "Ajout note", "Suppression élève", etc.
+  module VARCHAR(100), -- "Bulletin", "Présence", "Finance"
+  cible_type VARCHAR(100), -- Table concernée : "eleves", "evaluations"
+  cible_id INTEGER, -- ID de l'élément modifié
+  valeur_avant TEXT,
+  valeur_apres TEXT,
+  date_action TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  ip_address VARCHAR(45),
+  navigateur TEXT
+);
+
+CREATE INDEX idx_journal_module ON journal_audit(module, cible_type, cible_id);
+```
+
+---
+
+## 👥 Rôles et autorisations
+
+| Rôle                                    | Accès au journal d’audit          | RGPD - Export / Suppression | Consultation consentement |
+| --------------------------------------- | --------------------------------- | --------------------------- | ------------------------- |
+| Administrateur général                  | ✅ Complet                         | ✅ Complet                   | ✅                         |
+| Responsable RGPD                        | ✅ Complet                         | ✅ Complet                   | ✅                         |
+| Utilisateur (parent, élève, enseignant) | ❌ (sauf pour ses propres actions) | ✅ (via formulaire)          | ✅                         |
+
+---
+
+## 🔐 Sécurité renforcée
+
+* **Logs immuables** : impossibilité de modifier un journal une fois créé
+* **Chiffrement des valeurs sensibles**
+* **Double authentification recommandée** pour l’accès au module RGPD
+* **Sauvegardes cryptées régulières** des logs RGPD
+
+---
+
+## 📤 Exports et rapports
+
+* Export RGPD au format JSON ou PDF
+* Rapport journalier / hebdo / mensuel des actions critiques
+* Filtrage par utilisateur, module, date, action
+* Export automatique pour les audits
+
+---
+
+## 📱 Interfaces recommandées
+
+* 🧑‍🎓 **Parent / Élève** :
+
+  * Voir ses consentements RGPD
+  * Demander l’effacement / export
+* 👨‍🏫 **Personnel pédagogique** :
+
+  * Visualiser ses propres actions pédagogiques
+* 🛡️ **Administrateur / Responsable RGPD** :
+
+  * Tableaux de bord
+  * Filtres multi-critères
+  * Rapport RGPD automatisé
+
+---
+
+Parfait ! Voici la **spécification complète du Module 24 : Gestion des partenariats, sponsors et relations externes**, comme les **ONG, ministères, mécènes, associations, entreprises partenaires**, etc.
+
+---
+
+# 📘 Module 24 : Gestion des partenariats, sponsors et relations externes
+
+---
+
+## 🎯 Objectifs
+
+1. Gérer les partenaires officiels de l’établissement (ONG, entreprises, institutions publiques ou privées)
+2. Suivre les contrats de partenariat (durée, objectifs, engagements, contributions)
+3. Assurer le suivi des dons, financements, subventions ou soutiens matériels
+4. Mesurer l’impact pédagogique, social ou financier de ces partenariats
+5. Faciliter la communication institutionnelle avec les partenaires
+
+---
+
+## 🧱 1. Gestion des partenaires
+
+### 📌 Fonctionnalités :
+
+* Création de fiches partenaires : nom, type, contact principal, pays, domaine d’intervention
+* Types de partenaires :
+
+  * **Institutionnels** : Ministère, Mairie, Rectorat
+  * **ONG / Associations**
+  * **Entreprises** : mécènes, sponsors
+  * **Personnes physiques**
+* Historique des interactions
+* Documents associés (protocoles d’accord, contrats, conventions)
+
+### 🗃️ Table SQL :
+
+```sql
+CREATE TABLE partenaires (
+  id SERIAL PRIMARY KEY,
+  nom VARCHAR(255),
+  type_partenaire VARCHAR(100), -- "ONG", "Entreprise", "Institution", "Individuel"
+  secteur_intervention VARCHAR(255),
+  pays VARCHAR(100),
+  email_contact VARCHAR(255),
+  telephone_contact VARCHAR(50),
+  responsable_nom VARCHAR(255),
+  date_debut_collab DATE,
+  statut VARCHAR(50) DEFAULT 'Actif', -- "Actif", "Suspendu", "Terminé"
+  commentaire TEXT
+);
+```
+
+---
+
+## 📄 2. Suivi des conventions et engagements
+
+### 📌 Fonctionnalités :
+
+* Enregistrement des conventions ou contrats associés
+* Suivi des échéances, renouvellements et alertes automatiques
+* Engagements bilatéraux :
+
+  * Côté partenaire : dons, interventions, matériel, bourses
+  * Côté établissement : communication, rapports, résultats
+
+### 🗃️ Tables SQL :
+
+```sql
+CREATE TABLE conventions_partenaire (
+  id SERIAL PRIMARY KEY,
+  partenaire_id INTEGER REFERENCES partenaires(id),
+  titre_convention VARCHAR(255),
+  date_signature DATE,
+  date_expiration DATE,
+  objet TEXT,
+  engagements_etablissement TEXT,
+  engagements_partenaire TEXT,
+  fichier_convention VARCHAR(255), -- chemin vers document PDF
+  statut VARCHAR(50) DEFAULT 'En cours'
+);
+```
+
+---
+
+## 🎁 3. Gestion des dons, financements, soutiens
+
+### 📌 Fonctionnalités :
+
+* Enregistrement des apports matériels ou financiers (bourses, équipements, fournitures)
+* Attribution des dons à une activité (projet pédagogique, aide sociale, infrastructure)
+* Historique et traçabilité des dons
+* Génération de reçus, rapports, et bilans
+
+### 🗃️ Table SQL :
+
+```sql
+CREATE TABLE dons_partenaires (
+  id SERIAL PRIMARY KEY,
+  partenaire_id INTEGER REFERENCES partenaires(id),
+  date_don DATE,
+  type_don VARCHAR(100), -- "Financier", "Matériel", "Service"
+  montant NUMERIC(12, 2),
+  description TEXT,
+  affectation VARCHAR(255), -- "Cantine", "Bourses", "Équipement informatique"
+  justificatif_document VARCHAR(255),
+  utilisateur_enregistrement INTEGER REFERENCES utilisateurs(id)
+);
+```
+
+---
+
+## 📊 4. Indicateurs et suivi d’impact
+
+### 📌 Fonctionnalités :
+
+* Rapport par partenaire : apports, durée, fréquence
+* Cartographie des partenariats (géolocalisation possible)
+* Suivi des résultats attendus par projet ou convention
+* Mesure d’impact pédagogique ou social (ex. : nombre d’élèves bénéficiaires)
+
+### 🗃️ Table SQL (simplifiée) :
+
+```sql
+CREATE TABLE impact_partenariats (
+  id SERIAL PRIMARY KEY,
+  partenaire_id INTEGER REFERENCES partenaires(id),
+  convention_id INTEGER REFERENCES conventions_partenaire(id),
+  indicateur VARCHAR(255),
+  valeur_attendue TEXT,
+  valeur_reelle TEXT,
+  date_suivi DATE,
+  commentaire TEXT
+);
+```
+
+---
+
+## 📢 5. Communication institutionnelle
+
+### 📌 Fonctionnalités :
+
+* Envoi de newsletters partenaires
+* Invitations aux événements scolaires
+* Rapports PDF ou emails automatiques périodiques
+* Historique des échanges et rendez-vous
+
+---
+
+## 👥 Rôles et autorisations
+
+| Rôle                       | Gestion des partenaires | Suivi dons/conventions | Rapport impact |
+| -------------------------- | ----------------------- | ---------------------- | -------------- |
+| Administrateur général     | ✅                       | ✅                      | ✅              |
+| Responsable relations ext. | ✅                       | ✅                      | ✅              |
+| Gestionnaire financier     | 🔍 Lecture seule        | ✅                      | 🔍 Lecture     |
+| Enseignant / parent        | ❌                       | ❌                      | ❌              |
+
+---
+
+## 🔐 Sécurité & conformité
+
+* Suivi des actions sensibles dans le **journal d’audit** (Module 23)
+* Permissions strictes selon rôle
+* Possibilité d'anonymiser les partenaires sur demande RGPD
+
+---
+
+## 📤 API REST & Export
+
+* CRUD pour chaque table
+* Recherche filtrée : nom, type, date convention, impact
+* Export PDF / Excel des conventions ou dons
+* Intégration possible avec le module **comptabilité**
+
+---
+
+
+Parfait ! Voici la **spécification complète du Module 25 : Gestion des stages, immersions professionnelles et concours scolaires**. Ce module permet à l’établissement de suivre les parcours pratiques des apprenants, les stages obligatoires ou facultatifs, les concours académiques ou techniques, et les immersions pédagogiques.
+
+---
+
+# 📘 Module 25 : Gestion des stages, immersions et concours
+
+---
+
+## 🎯 Objectifs
+
+1. Suivre les stages scolaires, professionnels ou techniques réalisés par les apprenants
+2. Gérer les périodes d’immersion (ex. : dans des entreprises, ateliers ou institutions)
+3. Enregistrer et planifier les participations à des concours (interne, national, international)
+4. Évaluer les résultats et délivrer des attestations ou récompenses
+5. Faciliter la liaison avec les structures d’accueil externes
+
+---
+
+## 🧱 1. Gestion des stages
+
+### 📌 Fonctionnalités :
+
+* Planification des périodes de stages par classe ou filière
+* Saisie des détails du stage : entreprise, superviseur, durée, domaine
+* Suivi des rapports de stage (fichiers PDF, validation par encadrant)
+* Historique des stages par élève
+* Notification de fin de stage, évaluation par le tuteur
+* Génération automatique d’attestations de stage
+
+### 🗃️ Table SQL :
+
+```sql
+CREATE TABLE stages (
+  id SERIAL PRIMARY KEY,
+  apprenant_id INTEGER REFERENCES apprenants(id),
+  entreprise_nom VARCHAR(255),
+  secteur_activite VARCHAR(255),
+  responsable_nom VARCHAR(255),
+  contact_responsable VARCHAR(100),
+  date_debut DATE,
+  date_fin DATE,
+  fichier_rapport VARCHAR(255),
+  evaluation TEXT,
+  statut VARCHAR(50) DEFAULT 'En cours', -- "En cours", "Terminé", "Annulé"
+  utilisateur_enregistrement INTEGER REFERENCES utilisateurs(id)
+);
+```
+
+---
+
+## 🌍 2. Gestion des immersions professionnelles / pédagogiques
+
+### 📌 Fonctionnalités :
+
+* Planification de journées ou semaines d’immersion
+* Gestion par groupe, classe ou apprenant individuel
+* Association à un domaine, objectif pédagogique, structure d’accueil
+* Suivi des présences et retours pédagogiques
+* Ajout de photos, rapports, feedback de l’établissement hôte
+
+### 🗃️ Table SQL :
+
+```sql
+CREATE TABLE immersions (
+  id SERIAL PRIMARY KEY,
+  groupe_id INTEGER REFERENCES groupes(id), -- ou classe_id
+  structure_accueil VARCHAR(255),
+  domaine VARCHAR(255),
+  responsable_accueil VARCHAR(255),
+  contact_accueil VARCHAR(100),
+  date_immersion DATE,
+  duree_heure INTEGER,
+  observations TEXT,
+  fichier_feedback VARCHAR(255)
+);
+```
+
+---
+
+## 🏆 3. Gestion des concours (internes, inter-écoles, nationaux)
+
+### 📌 Fonctionnalités :
+
+* Enregistrement d’un concours : type, thème, organisateur, date
+* Inscription de participants (élèves, groupes ou classes)
+* Suivi des résultats, classement, récompenses
+* Génération de certificats et rapports de participation
+* Historique des concours par apprenant ou classe
+
+### 🗃️ Tables SQL :
+
+```sql
+CREATE TABLE concours (
+  id SERIAL PRIMARY KEY,
+  nom_concours VARCHAR(255),
+  type_concours VARCHAR(100), -- "Interne", "Régional", "National", "International"
+  organisateur VARCHAR(255),
+  date_concours DATE,
+  lieu VARCHAR(255),
+  theme VARCHAR(255),
+  statut VARCHAR(50) DEFAULT 'Prévu' -- "Prévu", "Terminé", "Annulé"
+);
+
+CREATE TABLE participation_concours (
+  id SERIAL PRIMARY KEY,
+  concours_id INTEGER REFERENCES concours(id),
+  apprenant_id INTEGER REFERENCES apprenants(id),
+  resultat TEXT,
+  classement INTEGER,
+  récompense VARCHAR(255),
+  certificat_pdf VARCHAR(255)
+);
+```
+
+---
+
+## 📊 4. Rapports et attestations
+
+### 📌 Fonctionnalités :
+
+* Rapports par élève sur les stages, immersions et concours
+* Export PDF des attestations (stage, immersion, concours)
+* Rapports par année, classe, partenaire externe
+* Suivi du taux de participation par activité
+
+---
+
+## 👥 Rôles et autorisations
+
+| Rôle                    | Stages | Immersions | Concours |
+| ----------------------- | ------ | ---------- | -------- |
+| Responsable pédagogique | ✅      | ✅          | ✅        |
+| Professeur référent     | 🔍     | 🔍         | ✅        |
+| Administration          | ✅      | ✅          | ✅        |
+| Apprenant (via portail) | 🔍     | 🔍         | 🔍       |
+
+---
+
+## 🔐 Sécurité et audit
+
+* Tous les fichiers (rapports, certificats) stockés de manière sécurisée
+* Journalisation des changements par utilisateur (via Module 23)
+* Notifications aux apprenants à chaque changement de statut
+
+---
+
+## 📤 API REST & Intégration
+
+* API : ajout / mise à jour des stages, concours, immersions
+* Téléchargement / envoi de rapports ou certificats
+* Intégration avec :
+
+  * **Module 2** (apprenants)
+  * **Module 12** (départements pédagogiques)
+  * **Module 10** (bibliothèque, pour joindre des rapports)
+  * **Module 17** (génération de certificats PDF)
+
+---
+
+## 🔁 Suggestions d’extension
+
+* Liaison directe avec des entreprises partenaires (Module 24)
+* Formulaire de **demande de stage en ligne** avec validation par le responsable
+* Gestion des **tuteurs internes** et **tuteurs externes**
+* Suivi post-stage ou post-immersion : impact, insertion, retour d’expérience
+
+---
+Voici la **spécification complète du Module 26 : Gestion des absences d’enseignants avec remplacement intelligent**, destiné à assurer la continuité pédagogique en cas d’absence d’un enseignant.
+
+---
+
+# 📘 Module 26 : Gestion des absences d’enseignants avec remplacement intelligent
+
+---
+
+## 🎯 Objectifs
+
+* Enregistrer et suivre les absences prévues ou imprévues des enseignants.
+* Trouver automatiquement un enseignant remplaçant qualifié et disponible.
+* Alerter les parties concernées (administration, remplaçant, élèves).
+* Suivre l’historique des remplacements et générer des rapports.
+
+---
+
+## 🧱 1. Gestion des absences
+
+### 📌 Fonctionnalités
+
+* Déclaration manuelle ou automatique d’une absence (retard, congé, maladie…).
+* Motif d’absence, durée, classe(s) impactée(s), matière(s) concernée(s).
+* Validation par l’administration ou responsable pédagogique.
+* Absence ponctuelle ou absence sur plusieurs jours/heures.
+
+### 🗃️ Table SQL : `absences_enseignants`
+
+```sql
+CREATE TABLE absences_enseignants (
+  id SERIAL PRIMARY KEY,
+  enseignant_id INTEGER REFERENCES enseignants(id),
+  date_absence DATE,
+  heure_debut TIME,
+  heure_fin TIME,
+  motif TEXT,
+  statut VARCHAR(50) DEFAULT 'En attente', -- Validée, En attente, Rejetée
+  justificatif_pdf VARCHAR(255),
+  date_declaration TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+---
+
+## 🤖 2. Moteur de remplacement intelligent
+
+### 📌 Fonctionnalités
+
+* Recherche automatique d’un enseignant **disponible à l’horaire concerné**.
+* Priorité aux enseignants :
+
+  * De la même matière.
+  * Du même département.
+  * Ayant peu ou pas de surcharge horaire.
+* Possibilité de remplacement manuel en cas d'exception.
+* Vérification des conflits d’emploi du temps.
+* Propositions triées par compatibilité et disponibilité.
+
+### 🗃️ Table SQL : `remplacements`
+
+```sql
+CREATE TABLE remplacements (
+  id SERIAL PRIMARY KEY,
+  absence_id INTEGER REFERENCES absences_enseignants(id),
+  remplacant_id INTEGER REFERENCES enseignants(id),
+  classe_id INTEGER REFERENCES classes(id),
+  matiere_id INTEGER REFERENCES matieres(id),
+  statut_remplacement VARCHAR(50) DEFAULT 'Proposé', -- Proposé, Accepté, Refusé, Confirmé
+  date_remplacement DATE,
+  heure_debut TIME,
+  heure_fin TIME,
+  commentaire TEXT
+);
+```
+
+---
+
+## 🔁 3. Notifications automatiques
+
+* Notification instantanée au remplaçant proposé.
+* Alerte à la direction ou à la vie scolaire.
+* Notification aux élèves via la messagerie interne (Module 9) ou mobile (Module 16).
+* Journalisation complète (Module 23 - Journal d’audit).
+
+---
+
+## 📊 4. Rapports et suivi
+
+* Historique des absences par enseignant.
+* Statistiques de remplacements : nombre, délai de réaction, remplacements automatiques vs manuels.
+* Suivi de la charge horaire des remplaçants.
+
+---
+
+## 👥 Rôles et autorisations
+
+| Rôle                    | Déclarer absence | Gérer remplacement | Valider |
+| ----------------------- | ---------------- | ------------------ | ------- |
+| Enseignant              | ✅                | ❌                  | ❌       |
+| Responsable pédagogique | 🔍               | ✅                  | ✅       |
+| Administrateur          | ✅                | ✅                  | ✅       |
+| Élèves                  | 🔍 (via portail) | ❌                  | ❌       |
+
+---
+
+## 🔐 Sécurité
+
+* Justificatifs médicaux ou autres stockés de manière sécurisée.
+* Modifications réservées aux administrateurs ou responsables pédagogiques.
+
+---
+
+## 🔌 Intégrations
+
+* **Module 4** : Emploi du temps (vérification des disponibilités).
+* **Module 12** : Département pédagogique (filière de remplacement).
+* **Module 9 & 13** : Notifications internes et externes.
+* **Module 17** : Génération d’attestation d’absence/remplacement.
+
+---
+
+## 📤 API REST (exemples)
+
+* `POST /api/absences` : déclarer une absence
+* `GET /api/remplacements/proposer` : générer proposition de remplacement
+* `POST /api/remplacements/confirmer` : accepter/refuser un remplacement
+* `GET /api/enseignants/disponibles` : liste dynamique pour remplacement
+
+---
+
+## 🔁 Suggestions évolutives
+
+* Ajout d’une **interface de planification intelligente** de remplacement glissant.
+* Remplacement **multi-enseignant** (ex. : partage d’une heure entre deux).
+* Mécanisme de **récompense / prime** pour enseignants ayant remplacé régulièrement.
+* Évaluation de l'efficacité des remplacements par les élèves.
+
+---
+
+Voici la **spécification complète du Module 27 : Gestion des partenariats externes** (entreprises, universités, ONG, institutions), destinée à valoriser les collaborations éducatives et professionnelles de l’établissement.
+
+---
+
+# 📘 Module 27 : Gestion des partenariats externes (entreprises, universités, ONG…)
+
+---
+
+## 🎯 Objectifs
+
+* Permettre à l’établissement de gérer les relations et collaborations avec des entités externes.
+* Suivre les conventions, projets, stages, dons, parrainages ou interventions.
+* Mieux structurer les actions conjointes avec des partenaires professionnels, éducatifs ou associatifs.
+
+---
+
+## 🧱 1. Gestion des partenaires
+
+### 📌 Fonctionnalités
+
+* Enregistrement complet d’un partenaire externe :
+
+  * Type : Entreprise, Université, ONG, Collectivité, Institution publique…
+  * Détails de contact, secteur d’activité, représentant principal.
+* Gestion des statuts : actif, inactif, en discussion, en évaluation.
+
+### 🗃️ Table SQL : `partenaires`
+
+```sql
+CREATE TABLE partenaires (
+  id SERIAL PRIMARY KEY,
+  nom VARCHAR(255) NOT NULL,
+  type_partenaire VARCHAR(100), -- 'Entreprise', 'Université', 'ONG', ...
+  secteur_activite VARCHAR(255),
+  contact_principal VARCHAR(255),
+  email VARCHAR(255),
+  telephone VARCHAR(50),
+  site_web VARCHAR(255),
+  adresse TEXT,
+  statut VARCHAR(50) DEFAULT 'Actif',
+  date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+---
+
+## 📄 2. Suivi des conventions et projets
+
+### 📌 Fonctionnalités
+
+* Ajout de conventions officielles signées (PDF), description du projet, durée.
+* Lien avec les objectifs pédagogiques (stages, formations, dons de matériel…).
+* Suivi des échéances, dates de renouvellement et résultats.
+
+### 🗃️ Table SQL : `conventions_partenaire`
+
+```sql
+CREATE TABLE conventions_partenaire (
+  id SERIAL PRIMARY KEY,
+  partenaire_id INTEGER REFERENCES partenaires(id),
+  titre VARCHAR(255),
+  description TEXT,
+  date_signature DATE,
+  date_expiration DATE,
+  fichier_convention_pdf VARCHAR(255),
+  statut VARCHAR(50) DEFAULT 'Valide', -- Valide, Expiré, En négociation
+  domaine_collaboration VARCHAR(255),
+  responsable_interne_id INTEGER REFERENCES utilisateurs(id),
+  date_enregistrement TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+---
+
+## 👥 3. Activités liées au partenariat
+
+### 📌 Fonctionnalités
+
+* Enregistrement des interventions, dons, formations, projets, événements…
+* Possibilité de rattacher des classes, enseignants, ou élèves à chaque activité.
+* Historique détaillé pour chaque partenaire.
+
+### 🗃️ Table SQL : `activites_partenaire`
+
+```sql
+CREATE TABLE activites_partenaire (
+  id SERIAL PRIMARY KEY,
+  convention_id INTEGER REFERENCES conventions_partenaire(id),
+  type_activite VARCHAR(100), -- Intervention, Don, Formation, Stage, ...
+  titre VARCHAR(255),
+  description TEXT,
+  date_activite DATE,
+  fichier_rapport_pdf VARCHAR(255),
+  observations TEXT,
+  responsable_interne_id INTEGER REFERENCES utilisateurs(id)
+);
+```
+
+---
+
+## 📊 4. Statistiques & évaluation des partenariats
+
+* Nombre de conventions par année, par type de partenaire.
+* Taux d’activités concrètes réalisées.
+* Classement des partenaires les plus actifs.
+* Suivi des partenariats en attente de renouvellement.
+
+---
+
+## 🔐 Rôles et accès
+
+| Rôle                    | Créer partenaire | Ajouter convention | Suivre activité | Évaluer |
+| ----------------------- | ---------------- | ------------------ | --------------- | ------- |
+| Responsable Partenariat | ✅                | ✅                  | ✅               | ✅       |
+| Direction               | ✅                | ✅                  | ✅               | ✅       |
+| Enseignant / Référent   | 🔍               | ❌                  | 🔍              | 🔍      |
+
+---
+
+## 🔌 Intégrations
+
+* **Module 25** : Gestion des stages et immersions.
+* **Module 10** : Gestion documentaire pour l’archivage de conventions.
+* **Module 20** : Lien avec événements scolaires.
+* **Module 14** : Indicateurs sur les résultats des partenariats.
+
+---
+
+## 📤 API REST (exemples)
+
+* `POST /api/partenaires` — Ajouter un nouveau partenaire.
+* `POST /api/conventions` — Créer une convention de partenariat.
+* `GET /api/partenaires/:id/activites` — Liste des activités par partenaire.
+* `PUT /api/conventions/:id/renouveler` — Mise à jour d’une convention.
+
+---
+
+## 💡 Évolutions possibles
+
+* Intégration d’un **portail partenaire** pour dépôt de documents, rapports ou suivi de collaboration.
+* Automatisation des alertes de **renouvellement de convention**.
+* **Notation/évaluation des partenaires** selon impact pédagogique.
+
+---
+Voici la **spécification complète du Module 28 : Gestion des évaluations de la qualité pédagogique et des inspections**, destinée à garantir le suivi et l’amélioration continue des pratiques éducatives au sein de l’établissement.
+
+---
+
+# 📘 Module 28 : Évaluations de la qualité pédagogique et inspections
+
+---
+
+## 🎯 Objectifs
+
+* Évaluer régulièrement la qualité de l’enseignement dispensé.
+* Permettre aux responsables pédagogiques ou inspecteurs de réaliser des visites, observations ou audits.
+* Fournir des outils de remontée, d’analyse et de suivi des performances pédagogiques et institutionnelles.
+* Garantir une amélioration continue basée sur des données qualitatives et quantitatives.
+
+---
+
+## 🧱 1. Planification des inspections et évaluations
+
+### 📌 Fonctionnalités
+
+* Création de sessions d’évaluation :
+
+  * Nom, type (interne, externe), date de début/fin.
+  * Objectif : audit pédagogique, contrôle administratif, visite d’inspection…
+* Affectation des inspecteurs, des classes/enseignants concernés.
+
+### 🗃️ Table SQL : `evaluations_pedagogiques`
+
+```sql
+CREATE TABLE evaluations_pedagogiques (
+  id SERIAL PRIMARY KEY,
+  titre VARCHAR(255) NOT NULL,
+  type_evaluation VARCHAR(100), -- "Inspection externe", "Audit interne", etc.
+  description TEXT,
+  date_debut DATE,
+  date_fin DATE,
+  statut VARCHAR(50) DEFAULT 'Planifiée', -- Planifiée, En cours, Clôturée
+  responsable_id INTEGER REFERENCES utilisateurs(id),
+  date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+---
+
+## 🧾 2. Critères d’évaluation et grilles personnalisables
+
+### 📌 Fonctionnalités
+
+* Création d’une grille d’évaluation personnalisée par type d’évaluation :
+
+  * Exemples de critères : préparation des cours, gestion de classe, pédagogie active, respect du programme, suivi des élèves, etc.
+  * Pondération et notation (ex. sur 5, 10 ou 20).
+* Catégorisation des critères : pédagogie, environnement, administratif, relationnel…
+
+### 🗃️ Table SQL : `criteres_evaluation`
+
+```sql
+CREATE TABLE criteres_evaluation (
+  id SERIAL PRIMARY KEY,
+  titre VARCHAR(255),
+  categorie VARCHAR(100), -- "Pédagogie", "Organisation", ...
+  description TEXT,
+  note_max INTEGER DEFAULT 10,
+  actif BOOLEAN DEFAULT true
+);
+```
+
+### 🗃️ Table SQL : `grilles_evaluation`
+
+```sql
+CREATE TABLE grilles_evaluation (
+  id SERIAL PRIMARY KEY,
+  evaluation_id INTEGER REFERENCES evaluations_pedagogiques(id),
+  critere_id INTEGER REFERENCES criteres_evaluation(id),
+  note_obtenue INTEGER,
+  commentaire TEXT
+);
+```
+
+---
+
+## 📊 3. Observation en classe / rapport d’évaluation
+
+### 📌 Fonctionnalités
+
+* Saisie d’observations qualitatives lors d’une séance d’observation.
+* Attribution de notes par critère, commentaires associés.
+* Génération de rapport PDF automatiquement.
+
+### 🗃️ Table SQL : `observations_evaluation`
+
+```sql
+CREATE TABLE observations_evaluation (
+  id SERIAL PRIMARY KEY,
+  evaluation_id INTEGER REFERENCES evaluations_pedagogiques(id),
+  enseignant_id INTEGER REFERENCES enseignants(id),
+  classe_id INTEGER REFERENCES classes(id),
+  date_observation DATE,
+  synthese TEXT,
+  recommandation TEXT,
+  rapport_pdf VARCHAR(255),
+  cree_par INTEGER REFERENCES utilisateurs(id),
+  date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+---
+
+## 📈 4. Suivi, statistiques & recommandations
+
+* Moyenne par critère, par enseignant, par classe ou niveau.
+* Évolution des performances par période.
+* Liste des recommandations émises par inspection.
+* Historique des inspections avec statut (amélioration, stagnation, régression).
+
+---
+
+## 🔐 Rôles et accès
+
+| Rôle                     | Créer évaluation | Noter critères | Rédiger rapport | Lire synthèse |
+| ------------------------ | ---------------- | -------------- | --------------- | ------------- |
+| Inspecteur / Superviseur | ✅                | ✅              | ✅               | ✅             |
+| Responsable pédagogique  | ✅                | ✅              | ✅               | ✅             |
+| Enseignant concerné      | ❌                | ❌              | ❌               | ✅ (partiel)   |
+
+---
+
+## 🔁 Intégrations possibles
+
+* **Module 4** : Lien avec les enseignants et les emplois du temps.
+* **Module 14** : Génération de graphiques de performance pédagogique.
+* **Module 23** : Journalisation des inspections dans l’audit pédagogique.
+* **Module 17** : Utilisation de rapports dans le tableau de bord pédagogique.
+
+---
+
+## 📤 API REST (exemples)
+
+* `POST /api/evaluations` — Créer une évaluation.
+* `GET /api/evaluations/:id/rapport` — Récupérer le rapport PDF.
+* `POST /api/evaluations/:id/criteres` — Associer les critères d’une grille.
+* `POST /api/observations` — Enregistrer une séance d’observation.
+
+---
+
+## 💡 Évolutions possibles
+
+* **Évaluation à 360°** : auto-évaluation par l’enseignant, avis des élèves, etc.
+* **Intégration mobile** : application dédiée aux inspections (formulaire mobile offline).
+* **Alertes automatiques** pour les enseignants sous-évalués ou non inspectés depuis longtemps.
+
+---
+
+Voici la **spécification détaillée du Module 29 : Gestion des enseignants vacataires ou à temps partiel**, pensée pour les établissements souhaitant encadrer et suivre efficacement les collaborateurs non permanents.
+
+---
+
+# 📘 Module 29 : Gestion des enseignants vacataires ou à temps partiel
+
+---
+
+## 🎯 Objectifs
+
+* Gérer distinctement les enseignants non permanents (vacataires ou à temps partiel).
+* Suivre leurs interventions, disponibilités, contrats et paiements.
+* Permettre une intégration souple dans les emplois du temps et dans la paie.
+* Assurer le respect des engagements contractuels tout en facilitant l’administration.
+
+---
+
+## 🧱 1. Identification et profil des enseignants vacataires
+
+### 📌 Fonctionnalités
+
+* Ajout de vacataires via un formulaire dédié ou import Excel.
+* Informations clés :
+
+  * Identité, coordonnées, diplômes
+  * Spécialités, matières autorisées à enseigner
+  * Type de contrat (vacation, temps partiel), durée, nombre d’heures prévu
+
+### 🗃️ Table SQL : `enseignants_vacataires`
+
+```sql
+CREATE TABLE enseignants_vacataires (
+  id SERIAL PRIMARY KEY,
+  nom VARCHAR(100),
+  prenom VARCHAR(100),
+  email VARCHAR(150) UNIQUE,
+  telephone VARCHAR(20),
+  adresse TEXT,
+  date_naissance DATE,
+  specialites TEXT,
+  date_debut_contrat DATE,
+  date_fin_contrat DATE,
+  type_contrat VARCHAR(50), -- 'vacataire', 'temps partiel'
+  heures_contractuelles INTEGER,
+  actif BOOLEAN DEFAULT TRUE,
+  cree_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+---
+
+## 🧾 2. Affectation aux classes et matières
+
+### 📌 Fonctionnalités
+
+* Affecter un vacataire à des matières précises sur des créneaux définis.
+* Limiter l’affectation en fonction des heures contractuelles restantes.
+* Visualiser son emploi du temps distinctement des permanents.
+
+### 🗃️ Table SQL : `affectations_vacataires`
+
+```sql
+CREATE TABLE affectations_vacataires (
+  id SERIAL PRIMARY KEY,
+  vacataire_id INTEGER REFERENCES enseignants_vacataires(id),
+  classe_id INTEGER REFERENCES classes(id),
+  matiere_id INTEGER REFERENCES matieres(id),
+  nb_heures_semaine INTEGER,
+  date_affectation DATE,
+  commentaire TEXT
+);
+```
+
+---
+
+## 📊 3. Suivi des interventions
+
+### 📌 Fonctionnalités
+
+* Pointage des séances réellement effectuées (par le vacataire ou un admin).
+* Saisie automatique via emploi du temps ou manuelle.
+* Calcul du total d’heures effectuées par mois / période.
+
+### 🗃️ Table SQL : `interventions_vacataires`
+
+```sql
+CREATE TABLE interventions_vacataires (
+  id SERIAL PRIMARY KEY,
+  vacataire_id INTEGER REFERENCES enseignants_vacataires(id),
+  classe_id INTEGER REFERENCES classes(id),
+  matiere_id INTEGER REFERENCES matieres(id),
+  date_seance DATE,
+  duree_heures NUMERIC(4,2),
+  statut VARCHAR(20) DEFAULT 'validée', -- validée, annulée, non déclarée
+  remarque TEXT
+);
+```
+
+---
+
+## 💰 4. Paiement et génération des fiches d’émargement
+
+### 📌 Fonctionnalités
+
+* Génération automatique d’une fiche mensuelle :
+
+  * Heures prévues vs heures effectuées
+  * Montant brut à payer (tarif horaire configurable)
+* Export PDF de la fiche d’émargement
+* Historique des paiements
+
+### 🗃️ Table SQL : `paiements_vacataires`
+
+```sql
+CREATE TABLE paiements_vacataires (
+  id SERIAL PRIMARY KEY,
+  vacataire_id INTEGER REFERENCES enseignants_vacataires(id),
+  mois VARCHAR(7), -- '2025-05'
+  heures_total NUMERIC(5,2),
+  tarif_horaire NUMERIC(6,2),
+  montant_brut NUMERIC(10,2),
+  statut_paiement VARCHAR(50) DEFAULT 'en attente', -- payé, en attente
+  date_paiement DATE,
+  fiche_pdf VARCHAR(255)
+);
+```
+
+---
+
+## 🧑‍💼 5. Gestion administrative & alertes
+
+### 📌 Fonctionnalités
+
+* Alertes automatiques à l’approche de la fin de contrat.
+* Rappel si heures maximales dépassées.
+* Tableau de bord listant les vacataires en activité, inactifs, ou terminés.
+* Téléversement de contrats, CV, diplômes.
+
+---
+
+## 🔐 Rôles et accès
+
+| Rôle                      | Ajout vacataire | Affectation | Pointage | Paiement | Lecture fiches |
+| ------------------------- | --------------- | ----------- | -------- | -------- | -------------- |
+| Responsable RH            | ✅               | ✅           | ❌        | ✅        | ✅              |
+| Responsable pédagogique   | ✅               | ✅           | ✅        | ❌        | ✅              |
+| Vacataire (compte réduit) | ❌               | ❌           | ✅        | ❌        | ✅ (lecture)    |
+
+---
+
+## 🔁 Intégrations possibles
+
+* **Module 4** : Emploi du temps et matières.
+* **Module 7** : Comptabilité, paie, génération de bulletins de paie.
+* **Module 14** : Statistiques sur l'engagement vacataire / performance.
+* **Module 18** : Remplacement d’enseignant par vacataire automatiquement.
+
+---
+
+## 📤 API REST (exemples)
+
+* `POST /api/vacataires` — Créer un vacataire.
+* `POST /api/vacataires/:id/affectations` — Affecter un vacataire.
+* `GET /api/vacataires/:id/interventions` — Suivre les cours donnés.
+* `GET /api/vacataires/:id/fiche-emargement` — Générer le PDF de fiche d'émargement.
+
+---
+
+## 📌 Améliorations possibles
+
+* Signature électronique de contrat et fiche d’émargement.
+* Application mobile simplifiée pour vacataires : emploi du temps + pointage.
+* Intégration avec paie automatisée via plateforme tierce (ex : SAGE, QuickBooks...).
+
+---
+Voici la **spécification complète du Module 30 : Gestion des examens officiels (BEPC, BAC, CEP, etc.)**, conçu pour répondre aux exigences des établissements confrontés aux examens nationaux ou officiels, en suivant les standards du système éducatif camerounais, français ou mixte.
+
+---
+
+# 📘 Module 30 : Gestion des examens officiels (BEPC, BAC, CEP, etc.)
+
+---
+
+## 🎯 Objectifs
+
+* Gérer le processus de préparation, d’inscription, de convocation, de suivi et de résultats des examens officiels.
+* Centraliser les informations requises pour les jurys, centres d’examen, documents administratifs, et résultats officiels.
+* Assurer la conformité avec les organismes d’État (ex : MINESEC, MEN, Rectorats…).
+
+---
+
+## 🧱 1. Gestion des types d'examens
+
+### 📌 Fonctionnalités
+
+* Création de types d’examens (BEPC, BAC, CEP, Probatoire, etc.)
+* Association à un niveau scolaire
+* Configuration des matières concernées, coefficients, seuils d’admission
+
+### 🗃️ Table SQL : `examens_officiels`
+
+```sql
+CREATE TABLE examens_officiels (
+  id SERIAL PRIMARY KEY,
+  nom VARCHAR(100),
+  niveau_scolaire_id INTEGER REFERENCES niveaux_scolaires(id),
+  annee_scolaire VARCHAR(9),
+  session VARCHAR(20), -- Juin 2025, Août 2025, etc.
+  date_examen DATE,
+  centre_examen VARCHAR(100),
+  cree_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+---
+
+## 🧾 2. Inscription des candidats à l’examen
+
+### 📌 Fonctionnalités
+
+* Sélection des élèves admissibles
+* Ajout automatique depuis les classes d'examen (ex : 3e, Terminale)
+* Génération de la fiche d’inscription officielle
+
+### 🗃️ Table SQL : `candidats_examens`
+
+```sql
+CREATE TABLE candidats_examens (
+  id SERIAL PRIMARY KEY,
+  eleve_id INTEGER REFERENCES eleves(id),
+  examen_id INTEGER REFERENCES examens_officiels(id),
+  numero_inscription VARCHAR(50) UNIQUE,
+  statut_inscription VARCHAR(20) DEFAULT 'enregistré', -- validé, en attente
+  dossier_complet BOOLEAN DEFAULT FALSE,
+  observation TEXT
+);
+```
+
+---
+
+## 📄 3. Convocations et documents officiels
+
+### 📌 Fonctionnalités
+
+* Génération automatique :
+
+  * Fiches individuelles
+  * Convocations (avec centre, salle, horaires)
+  * Liste nominative des candidats par centre
+* Téléversement de pièces jointes
+
+---
+
+## 🧪 4. Gestion des épreuves
+
+### 📌 Fonctionnalités
+
+* Définition des épreuves de chaque examen
+* Planning des épreuves (date, heure, durée)
+* Affectation des enseignants surveillants
+
+### 🗃️ Table SQL : `epreuves_examens`
+
+```sql
+CREATE TABLE epreuves_examens (
+  id SERIAL PRIMARY KEY,
+  examen_id INTEGER REFERENCES examens_officiels(id),
+  matiere_id INTEGER REFERENCES matieres(id),
+  date_epreuve DATE,
+  heure_debut TIME,
+  duree_minutes INTEGER,
+  salle_examen VARCHAR(50),
+  coefficient INTEGER
+);
+```
+
+---
+
+## 📝 5. Saisie des notes d’examen
+
+### 📌 Fonctionnalités
+
+* Interface sécurisée de saisie des notes
+* Possibilité d’import CSV
+* Calcul automatique de moyenne finale et mention
+
+### 🗃️ Table SQL : `notes_examens`
+
+```sql
+CREATE TABLE notes_examens (
+  id SERIAL PRIMARY KEY,
+  candidat_id INTEGER REFERENCES candidats_examens(id),
+  epreuve_id INTEGER REFERENCES epreuves_examens(id),
+  note NUMERIC(5,2),
+  valide BOOLEAN DEFAULT FALSE,
+  remarque TEXT
+);
+```
+
+---
+
+## 📊 6. Résultats et statistiques
+
+### 📌 Fonctionnalités
+
+* Calcul automatisé des moyennes générales
+* Attribution de mentions (Passable, Bien, Très bien, Échec)
+* Génération :
+
+  * Liste des admis / recalés
+  * Statistiques par matière, par sexe, par centre
+* Export PDF / Excel des résultats officiels
+
+### 🗃️ Table SQL : `resultats_examens`
+
+```sql
+CREATE TABLE resultats_examens (
+  id SERIAL PRIMARY KEY,
+  candidat_id INTEGER REFERENCES candidats_examens(id),
+  moyenne_finale NUMERIC(5,2),
+  mention VARCHAR(50),
+  decision_finale VARCHAR(20), -- admis, recalé
+  date_resultat DATE
+);
+```
+
+---
+
+## 📦 7. Suivi administratif
+
+### 📌 Fonctionnalités
+
+* Archivage de toutes les sessions d'examen
+* Dossiers de chaque candidat par année
+* Export complet du dossier de chaque élève
+
+---
+
+## 🔐 Rôles et autorisations
+
+| Rôle                    | Créer examen | Gérer candidats | Saisir notes | Valider résultats | Générer documents |
+| ----------------------- | ------------ | --------------- | ------------ | ----------------- | ----------------- |
+| Admin                   | ✅            | ✅               | ❌            | ✅                 | ✅                 |
+| Responsable pédagogique | ✅            | ✅               | ✅            | ❌                 | ✅                 |
+| Jury (compte restreint) | ❌            | ❌               | ✅            | ❌                 | ❌                 |
+
+---
+
+## 🔁 Intégrations
+
+* **Module 2** : Récupération des élèves de classe d’examen.
+* **Module 5 / 8** : Recoupement entre bulletin et note d’examen.
+* **Module 14** : Statistiques d’examen officielles.
+* **Module 25** : Suivi des candidats en stage après obtention du diplôme.
+
+---
+
+## 📤 API REST (exemples)
+
+* `POST /api/examens` — Créer un examen officiel.
+* `POST /api/examens/:id/candidats` — Ajouter des élèves à l’examen.
+* `POST /api/notes-examens` — Saisie ou import de notes.
+* `GET /api/examens/:id/resultats` — Générer liste d’admis.
+
+---
+
+## 📌 Extensions possibles
+
+* Téléversement des résultats depuis fichiers officiels (ex : Excel fourni par le ministère)
+* Signature électronique des procès-verbaux d'examen
+* Synchronisation automatique avec une plateforme ministérielle via API
+
+---
+Voici la spécification du **Module 31 : Gestion de la formation continue des enseignants et interface personnalisée pour les parents**, divisé en deux sous-parties complémentaires mais indépendantes si besoin.
+
+---
+
+# 📘 Module 31 : Formation continue des enseignants & Interface parent personnalisée
+
+---
+
+## 🎯 Objectifs
+
+* **Côté enseignant** : Permettre la planification, le suivi et la validation des formations continues obligatoires ou optionnelles, avec journal de compétences.
+* **Côté parent** : Offrir un espace personnalisé d’accès aux informations scolaires de leurs enfants (résultats, emploi du temps, rendez-vous, messages, documents...).
+
+---
+
+## 🧩 PARTIE 1 : Formation continue des enseignants
+
+---
+
+### 📌 Fonctionnalités
+
+1. **Création et planification des formations**
+
+   * Définition des thèmes, objectifs, durée, formateurs
+   * Programmation des dates, lieux ou format (présentiel / en ligne)
+
+2. **Inscription et suivi des enseignants**
+
+   * Inscription manuelle ou auto selon profils
+   * Suivi des présences et validations
+
+3. **Évaluation post-formation**
+
+   * Questionnaire ou évaluation à chaud / froid
+   * Attestation automatique (PDF)
+
+4. **Journal individuel de formation**
+
+   * Historique des formations suivies
+   * Compétences acquises ou mises à jour
+   * Génération de rapport par enseignant
+
+---
+
+### 🗃️ Tables SQL principales
+
+```sql
+CREATE TABLE formations (
+  id SERIAL PRIMARY KEY,
+  titre VARCHAR(150),
+  description TEXT,
+  date_debut DATE,
+  date_fin DATE,
+  format VARCHAR(20), -- Présentiel, En ligne
+  lieu VARCHAR(150),
+  formateur VARCHAR(100),
+  statut VARCHAR(20) DEFAULT 'prévu' -- prévu, terminé, annulé
+);
+
+CREATE TABLE participation_formations (
+  id SERIAL PRIMARY KEY,
+  formation_id INTEGER REFERENCES formations(id),
+  enseignant_id INTEGER REFERENCES enseignants(id),
+  present BOOLEAN DEFAULT FALSE,
+  evaluation_note NUMERIC(3,1),
+  attestation_url TEXT
+);
+```
+
+---
+
+### 🔗 Intégrations
+
+* **Module 4** : pour gérer les enseignants.
+* **Module 14** : statistiques sur le développement professionnel.
+* **Module 29** : gestion spécifique des vacataires et temporaires.
+
+---
+
+## 🧩 PARTIE 2 : Interface parent personnalisée
+
+---
+
+### 📌 Fonctionnalités
+
+1. **Connexion et sécurité**
+
+   * Accès parent par identifiants liés à l’élève
+   * Vue multi-enfants si parent de plusieurs élèves
+
+2. **Tableau de bord**
+
+   * Résumé des moyennes, bulletins, absences
+   * Notifications récentes et messages
+
+3. **Accès rapide aux modules suivants** :
+
+   * 📊 Bulletins et évaluations
+   * 📅 Emploi du temps
+   * 📂 Documents transmis
+   * 🧾 Paiements et factures
+   * 📬 Messagerie avec l’établissement
+   * 📋 Rendez-vous (parents-profs, réunions, etc.)
+
+4. **Paramétrage de préférences**
+
+   * Choix du canal de communication (email, SMS, app)
+   * Langue de l’interface (FR / EN)
+
+---
+
+### 🗃️ Tables SQL principales
+
+```sql
+CREATE TABLE parents (
+  id SERIAL PRIMARY KEY,
+  nom VARCHAR(100),
+  prenom VARCHAR(100),
+  email VARCHAR(100) UNIQUE,
+  telephone VARCHAR(20),
+  mot_de_passe TEXT,
+  langue_preferee VARCHAR(10) DEFAULT 'FR'
+);
+
+CREATE TABLE parent_eleve (
+  id SERIAL PRIMARY KEY,
+  parent_id INTEGER REFERENCES parents(id),
+  eleve_id INTEGER REFERENCES eleves(id)
+);
+```
+
+---
+
+### 🔗 Intégrations
+
+* **Module 1** : récupération des informations des élèves.
+* **Modules 5, 6, 7, 8, 14** : agrégation des données affichées.
+* **Module 9** : notifications personnalisées.
+
+---
+
+## 📤 API REST (exemples)
+
+* `GET /api/enseignants/:id/formations` – Voir formations suivies
+* `POST /api/formations/:id/inscription` – Inscrire un enseignant
+* `GET /api/parents/:id/enfants` – Lister enfants du parent
+* `GET /api/parents/:id/dashboard` – Récupérer tableau de bord
+
+---
+
+## 🔐 Rôles et autorisations
+
+| Action                           | Admin | Enseignant | Parent |
+| -------------------------------- | ----- | ---------- | ------ |
+| Créer/éditer formations          | ✅     | ❌          | ❌      |
+| S’inscrire à une formation       | ❌     | ✅          | ❌      |
+| Voir historique de formation     | ✅     | ✅          | ❌      |
+| Accéder aux notes / bulletins    | ❌     | ❌          | ✅      |
+| Consulter emploi du temps enfant | ❌     | ❌          | ✅      |
+| Paramétrer notifications         | ✅     | ✅          | ✅      |
+
+---
+
+## 📌 Extensions possibles
+
+* Génération automatique des rapports de formation pour inspections académiques
+* Application mobile parent / enseignant dédiée
+* Intégration visioconférence (Zoom, Meet) pour formations
+* Alerte sur formations obligatoires à venir
+
+---
+Voici la fiche détaillée du **Module 32 : Gestion des projets communautaires ou de développement durable**, intégré dans un système scolaire moderne et citoyen.
+
+---
+
+# 🌱 **Module 32 : Gestion des projets communautaires / développement durable**
+
+---
+
+## 🎯 Objectifs
+
+* Favoriser la participation active des élèves, enseignants et partenaires à des projets à impact (écologie, solidarité, innovation sociale, développement local...).
+* Permettre une gestion structurée des projets : planification, suivi, collaboration, évaluation d'impact.
+* Valoriser les actions sociales de l’établissement scolaire.
+
+---
+
+## 🔧 Fonctionnalités principales
+
+### 1. **Création et gestion des projets**
+
+* Nom, description, objectifs, domaine (écologie, inclusion, éducation, santé, etc.)
+* Dates de début/fin
+* État du projet (Planifié, En cours, Terminé, Suspendu)
+* Pièces jointes (budget, planning, fiches, affiches...)
+
+### 2. **Affectation des participants**
+
+* Élèves (groupes ou individuels)
+* Enseignants encadrants
+* Intervenants externes (ONG, mairie, partenaires...)
+* Suivi des rôles et responsabilités
+
+### 3. **Planification des étapes du projet**
+
+* Tâches définies par jalons (activités, interventions, réunions, événements)
+* Calendrier intégré / notifications automatiques
+* Suivi de l’état d’avancement
+
+### 4. **Suivi des résultats et indicateurs**
+
+* Objectifs atteints
+* Mesures d’impact (indicateurs définis par projet)
+* Bilan (texte, visuel, PDF généré)
+* Publication possible sur le site de l’école
+
+### 5. **Valorisation pédagogique**
+
+* Attribution de crédits ou d’appréciations aux élèves participants
+* Intégration au livret scolaire ou au bulletin (si voulu)
+* Suivi individuel ou par groupe
+
+---
+
+## 🗃️ Modèle de base de données (SQL)
+
+```sql
+CREATE TABLE projets_communautaires (
+  id SERIAL PRIMARY KEY,
+  titre VARCHAR(150),
+  description TEXT,
+  domaine VARCHAR(100), -- ex: "Écologie", "Solidarité", "Innovation"
+  date_debut DATE,
+  date_fin DATE,
+  etat VARCHAR(20) DEFAULT 'Planifié', -- En cours, Terminé, Suspendu
+  fichier_support TEXT,
+  bilan_url TEXT
+);
+
+CREATE TABLE participants_projet (
+  id SERIAL PRIMARY KEY,
+  projet_id INTEGER REFERENCES projets_communautaires(id),
+  type_participant VARCHAR(20), -- 'eleve', 'enseignant', 'partenaire'
+  participant_id INTEGER, -- ID dynamique selon type
+  role VARCHAR(100)
+);
+
+CREATE TABLE jalons_projet (
+  id SERIAL PRIMARY KEY,
+  projet_id INTEGER REFERENCES projets_communautaires(id),
+  nom VARCHAR(100),
+  description TEXT,
+  date_prevue DATE,
+  statut VARCHAR(20) DEFAULT 'À faire' -- À faire, En cours, Terminé
+);
+
+CREATE TABLE indicateurs_projet (
+  id SERIAL PRIMARY KEY,
+  projet_id INTEGER REFERENCES projets_communautaires(id),
+  nom VARCHAR(100),
+  valeur_attendue TEXT,
+  valeur_reelle TEXT,
+  unite VARCHAR(20)
+);
+```
+
+---
+
+## 🧠 Exemples de projets
+
+* **Potager scolaire durable**
+* **Campagne de sensibilisation à l'hygiène**
+* **Tri sélectif dans l’établissement**
+* **Ateliers numériques intergénérationnels**
+* **Journées de solidarité (orphelinat, hôpital, village voisin)**
+
+---
+
+## 📊 API REST – exemples
+
+* `GET /api/projets` : Liste des projets
+* `POST /api/projets` : Créer un projet
+* `PUT /api/projets/:id` : Modifier un projet
+* `POST /api/projets/:id/participants` : Ajouter un élève/enseignant
+* `GET /api/projets/:id/indicateurs` : Voir les indicateurs
+* `POST /api/projets/:id/jalons` : Ajouter une étape
+
+---
+
+## 🔐 Droits d'accès et rôles
+
+| Action                            | Admin | Enseignant | Élève |
+| --------------------------------- | ----- | ---------- | ----- |
+| Créer/modifier un projet          | ✅     | ✅          | ❌     |
+| Être affecté à un projet          | ✅     | ✅          | ✅     |
+| Suivre l’avancement et les étapes | ✅     | ✅          | ✅     |
+| Ajouter des jalons ou indicateurs | ✅     | ✅          | ❌     |
+| Consulter les résultats           | ✅     | ✅          | ✅     |
+
+---
+
+## 📎 Intégrations possibles
+
+* **Module 4** : Enseignants impliqués
+* **Module 2** : Élèves participants
+* **Module 14** : Tableau de bord avec indicateurs sociaux / écoresponsables
+* **Module 22** : Clubs et projets transversaux
+* **Module 25** : Préparation aux stages ou concours
+
+---
+
+## 📌 Extensions futures
+
+* Intégration avec les réseaux sociaux ou le site de l’école pour publier les résultats
+* Suivi budgétaire plus avancé pour les grands projets
+* Système de vote ou d’évaluation des projets par les élèves ou le public
+* Gamification : badges / trophées attribués aux élèves
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
