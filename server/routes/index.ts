@@ -12,6 +12,9 @@ import examensRoutes from './examens.routes';
 import messagingRoutes from './messaging.routes';
 import rolesRoutes from './roles.routes';
 import permissionsRoutes from './permissions.routes';
+import bulletinsRoutes from './bulletins.routes';
+import financesRoutes from './finances.routes';
+import employeesRoutes from './employees.routes';
 import { globalLimiter } from '../middlewares/rateLimit.middleware';
 
 const router = express.Router();
@@ -28,13 +31,18 @@ router.use('/matieres', matieresRoutes);
 router.use('/etablissements', etablissementsRoutes);
 router.use('/dashboard', dashboardRoutes);
 
-// New modules
+// Core modules
 router.use('/library', libraryRoutes);
 router.use('/sanctions', sanctionsRoutes);
 router.use('/examens', examensRoutes);
 router.use('/messages', messagingRoutes);
 router.use('/roles', rolesRoutes);
 router.use('/permissions', permissionsRoutes);
+
+// Advanced modules
+router.use('/bulletins', bulletinsRoutes);
+router.use('/finances', financesRoutes);
+router.use('/employees', employeesRoutes);
 
 // Health check endpoint
 router.get('/health', (req, res) => {
